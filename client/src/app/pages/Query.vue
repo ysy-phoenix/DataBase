@@ -2,8 +2,8 @@
   <div class="container top scp">
     <div class="row">
       <div class="col-sm-12">
-        <h1 class="text-center">教师教学科研科研工作统计</h1>
-        <hr />
+        <h2 class="text-center text-primary">教师教学科研科研工作统计</h2>
+        <br />
         <div
           class="alert"
           :class="{
@@ -17,68 +17,101 @@
         </div>
 
         <div class="d-flex justify-content-center">
-          <div class="mb-1 d-flex me-3">
-            <input
-              type="text"
-              class="form-control"
-              placeholder="请输入教师工号"
-              v-model="teacherNo"
-            />
+          <div class="form-outline mb-1 me-3" style="width: 15%">
+            <input type="text" class="form-control" v-model="teacherNo" />
+            <label
+              class="form-label"
+              style="white-space: nowrap; font-weight: bold"
+              >教师工号:</label
+            >
           </div>
-          <div class="mb-1 d-flex me-3">
-            <input
-              type="text"
-              class="form-control"
-              placeholder="请输入开始年份"
-              v-model="startYear"
-            />
+          <div class="form-outline mb-1 me-3" style="width: 15%">
+            <input type="text" class="form-control" v-model="startYear" />
+            <label
+              class="form-label"
+              style="white-space: nowrap; font-weight: bold"
+              >开始年份:</label
+            >
           </div>
-          <div class="mb-1 d-flex me-3">
-            <input
-              type="text"
-              class="form-control"
-              placeholder="请输入结束年份"
-              v-model="endYear"
-            />
+          <div class="form-outline mb-1 me-3" style="width: 15%">
+            <input type="text" class="form-control" v-model="endYear" />
+            <label
+              class="form-label"
+              style="white-space: nowrap; font-weight: bold"
+              >结束年份:</label
+            >
           </div>
-          <div class="d-flex">
-            <button type="button" class="btn btn-warning" @click="query">
+          <div class="d-flex me-3">
+            <button
+              type="button"
+              class="btn btn-warning"
+              @click="query"
+              style="white-space: nowrap; font-weight: bold"
+            >
               查询
             </button>
           </div>
+          <div class="d-flex">
+            <button
+              type="button"
+              class="btn btn-danger"
+              @click="export_pdf"
+              style="white-space: nowrap; font-weight: bold"
+            >
+              导出 pdf
+            </button>
+          </div>
         </div>
-        <br/>
+        <br />
 
-        <h2 class="text-center">教师基本信息</h2>
+        <h3 class="text-info">教师基本信息</h3>
         <table class="table table-hover text-center table-striped">
           <thead>
-            <tr class="fs-7">
-              <th scope="col">工号</th>
-              <th scope="col">姓名</th>
-              <th scope="col">性别</th>
-              <th scope="col">职称</th>
+            <tr class="fs-6">
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                工号
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                姓名
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                性别
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                职称
+              </th>
             </tr>
           </thead>
           <tbody v-if="teacher.No">
             <tr class="text-center align-middle fs-6">
               <td>{{ teacher.No }}</td>
               <td>{{ teacher.name }}</td>
-              <td>{{ teacher.gender }}</td>
-              <td>{{ teacher.title }}</td>
+              <td>{{ getGender(teacher.gender) }}</td>
+              <td>{{ getTitle(teacher.title) }}</td>
             </tr>
           </tbody>
         </table>
-        <br/>
+        <br />
 
-        <h2 class="text-center">教学情况</h2>
+        <h3 class="text-info">教学情况</h3>
         <table class="table table-hover text-center table-striped">
           <thead>
-            <tr class="fs-7">
-              <th scope="col">课程号</th>
-              <th scope="col">课程名</th>
-              <th scope="col">主讲学时</th>
-              <th scope="col">年份</th>
-              <th scope="col">学期</th>
+            <tr class="fs-6">
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                课程号
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                课程名
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                主讲学时
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                年份
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                学期
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -91,7 +124,7 @@
               <td>{{ course.name }}</td>
               <td>{{ course.takeCreditHour }}</td>
               <td>{{ course.year }}</td>
-              <td>{{ course.semester }}</td>
+              <td>{{ getSemester(course.semester) }}</td>
             </tr>
           </tbody>
         </table>
@@ -131,19 +164,33 @@
             </li>
           </ul>
         </nav>
-        <br/>
+        <br />
 
-        <h2 class="text-center">发表论文情况</h2>
+        <h3 class="text-info">发表论文情况</h3>
         <table class="table table-hover text-center table-striped">
           <thead>
-            <tr class="fs-7">
-              <th scope="col">论文名</th>
-              <th scope="col">发表源</th>
-              <th scope="col">发表年份</th>
-              <th scope="col">类型</th>
-              <th scope="col">级别</th>
-              <th scope="col">排名</th>
-              <th scope="col">是否通讯作者</th>
+            <tr class="fs-6">
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                论文名
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;发表源&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                发表年份
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                类型
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                &nbsp;&nbsp;&nbsp;级别&nbsp;&nbsp;&nbsp;
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                排名
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                是否通讯作者
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -155,10 +202,10 @@
               <td>{{ paper.name }}</td>
               <td>{{ paper.source }}</td>
               <td>{{ paper.year }}</td>
-              <td>{{ paper.type }}</td>
-              <td>{{ paper.level }}</td>
+              <td>{{ getPaperType(paper.type) }}</td>
+              <td>{{ getPaperLevel(paper.level) }}</td>
               <td>{{ paper.rank }}</td>
-              <td>{{ paper.isCoAuthor }}</td>
+              <td>{{ paper.isCoAuthor ? '是' : '否' }}</td>
             </tr>
           </tbody>
         </table>
@@ -177,7 +224,7 @@
             </li>
             <li
               class="page-item"
-              v-for="page in coursePages"
+              v-for="page in paperPages"
               :key="page"
               :class="{ active: page === currentCoursePage }"
             >
@@ -198,19 +245,33 @@
             </li>
           </ul>
         </nav>
-        <br/>
+        <br />
 
-        <h2 class="text-center">承担项目情况</h2>
+        <h3 class="text-info">承担项目情况</h3>
         <table class="table table-hover text-center table-striped">
           <thead>
-            <tr class="fs-7">
-              <th scope="col">项目名称</th>
-              <th scope="col">项目来源</th>
-              <th scope="col">项目类型</th>
-              <th scope="col">开始年份</th>
-              <th scope="col">结束年份</th>
-              <th scope="col">项目总经费</th>
-              <th scope="col">承担经费</th>
+            <tr class="fs-6">
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                项目名称
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                项目来源
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                项目类型
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                开始年份
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                结束年份
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                项目总经费
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                承担经费
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -221,7 +282,7 @@
             >
               <td>{{ project.name }}</td>
               <td>{{ project.source }}</td>
-              <td>{{ project.type }}</td>
+              <td>{{ getProjectType(project.type) }}</td>
               <td>{{ project.startYear }}</td>
               <td>{{ project.endYear }}</td>
               <td>{{ project.funds }}</td>
@@ -244,7 +305,7 @@
             </li>
             <li
               class="page-item"
-              v-for="page in pages"
+              v-for="page in projectPages"
               :key="page"
               :class="{ active: page === currentProjectPage }"
             >
@@ -273,6 +334,16 @@
 <script>
 import axios from 'axios'
 import _ from 'lodash'
+import {
+  getTitle,
+  getGender,
+  getPaperLevel,
+  getPaperType,
+  getSemester,
+  getProjectType,
+} from '../utils/helpFunc.vue'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 export default {
   data () {
@@ -374,24 +445,65 @@ export default {
     },
 
     query () {
-      const path = `http://localhost:5000/query/${this.teacherNo}/${this.startYear}/${this.endYear}`
-      axios
-        .get(path)
-        .then((res) => {
-          this.showMessage = true
-          this.message = res.data.message
-          if (res.data.status) {
-            this.teacher = res.data.teacher
-            this.courses = res.data.courses
-            this.papers = res.data.papers
-            this.projects = res.data.projects
-          }
-        })
-        .catch((err) => {
-          this.showMessage = true
-          this.message = err.response.data.message
-        })
+      if (this.teacherNo && this.startYear && this.endYear) {
+        const path = `http://localhost:5000/query/${this.teacherNo}/${this.startYear}/${this.endYear}`
+        axios
+          .get(path)
+          .then((res) => {
+            this.showMessage = true
+            this.message = res.data.message
+            if (res.data.status) {
+              this.teacher = res.data.teacher
+              this.courses = res.data.courses
+              this.papers = res.data.papers
+              this.projects = res.data.projects
+            }
+          })
+          .catch((err) => {
+            this.showMessage = true
+            this.message = err.response.data.message
+          })
+      } else {
+        this.message = '查询失败：请填写完整的查询信息！'
+        this.showMessage = true
+      }
     },
+
+    export_pdf () {
+      this.query()
+      if (this.teacherNo && this.startYear && this.endYear) {
+        const path = `http://localhost:5000/export/pdf/${this.teacherNo}/${this.startYear}/${this.endYear}`
+        axios
+          .get(path, { responseType: 'blob' })
+          .then((res) => {
+            this.showMessage = true
+            this.message = '导出成功！'
+            const url = window.URL.createObjectURL(res.data);
+            window.open(url, '_blank');
+          })
+          .catch((err) => {
+            console.log('err: ', err)
+            this.showMessage = true
+            this.message = '导出失败：发生错误！'
+          })
+      } else {
+        this.message = '导出失败：请填写完整的查询信息！'
+        this.showMessage = true
+      }
+    },
+
+    getTitle,
+    getGender,
+    getPaperLevel,
+    getPaperType,
+    getSemester,
+    getProjectType,
+  },
+
+  mounted () {
+    document.querySelectorAll('.form-outline').forEach((formOutline) => {
+      new mdb.Input(formOutline).update()
+    })
   },
 }
 </script>
@@ -399,5 +511,7 @@ export default {
 <style scoped>
 .top {
   margin-top: 20px;
+  /* margin-left: 50px; */
+  /* margin-right: 20px; */
 }
 </style>

@@ -2,8 +2,8 @@
   <div class="container top scp">
     <div class="row">
       <div class="col-sm-12">
-        <h1 class="text-center">项目</h1>
-        <hr />
+        <h2 class="text-center text-primary">承担项目登记查询</h2>
+        <br />
         <div
           class="alert"
           :class="{
@@ -20,6 +20,7 @@
             <button
               type="button"
               class="btn btn-success text-nowrap"
+              style="white-space: nowrap; font-weight: bold"
               @click="toggleAddProjectModal"
             >
               项目登记
@@ -29,38 +30,82 @@
             <button
               type="button"
               class="btn btn-primary text-nowrap"
+              style="white-space: nowrap; font-weight: bold"
               @click="toggleTakeProjectModal"
             >
               承担项目登记
             </button>
           </div>
-          <div class="mb-1 d-flex me-3">
-            <input
-              type="text"
-              class="form-control"
-              placeholder="请输入项目号"
-              v-model="projectNo"
-            />
+          <div class="form-outline mb-1 me-1" style="width: 15%">
+            <input type="text" class="form-control" v-model="projectNo" />
+            <label
+              class="form-label"
+              style="white-space: nowrap; font-weight: bold"
+              >项目号:</label
+            >
           </div>
-          <div class="d-flex">
-            <button type="button" class="btn btn-warning" @click="fundCheck">
+          <div class="d-flex me-3">
+            <button
+              type="button"
+              class="btn btn-warning"
+              @click="fundCheck"
+              style="white-space: nowrap; font-weight: bold"
+            >
               经费检查
+            </button>
+          </div>
+          <div class="form-outline mb-1 me-1" style="width: 15%">
+            <input type="text" class="form-control" v-model="teacherNo" />
+            <label
+              class="form-label"
+              style="white-space: nowrap; font-weight: bold"
+              >教师工号:</label
+            >
+          </div>
+          <div class="d-flex me-3">
+            <button
+              type="button"
+              class="btn btn-info"
+              @click="getProjects"
+              style="white-space: nowrap; font-weight: bold"
+            >
+              项目查询
             </button>
           </div>
         </div>
         <table class="table table-hover text-center table-striped">
           <thead>
-            <tr class="fs-7">
-              <th scope="col">项目号</th>
-              <th scope="col">项目名称</th>
-              <th scope="col">项目来源</th>
-              <th scope="col">项目类型</th>
-              <th scope="col">项目总经费</th>
-              <th scope="col">开始年份</th>
-              <th scope="col">结束年份</th>
-              <th scope="col">负责人</th>
-              <th scope="col">项目更新</th>
-              <th scope="col">项目删除</th>
+            <tr class="fs-6">
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                项目号
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;项目名称&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                &nbsp;&nbsp;项目来源&nbsp;&nbsp;
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                &nbsp;项目类型&nbsp;
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                项目总经费
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                开始年份
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                结束年份
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                负责人
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                项目更新
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                项目删除
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -72,7 +117,7 @@
               <td>{{ project.No }}</td>
               <td>{{ project.name }}</td>
               <td>{{ project.source }}</td>
-              <td>{{ project.type }}</td>
+              <td>{{ getProjectType(project.type) }}</td>
               <td>{{ project.funds }}</td>
               <td>{{ project.startYear }}</td>
               <td>{{ project.endYear }}</td>
@@ -81,10 +126,10 @@
                   <button
                     class="btn btn-primary dropdown-toggle"
                     type="button"
-                    id="dropdownMenuButton"
                     data-mdb-toggle="dropdown"
                     aria-expanded="false"
                     @click="getTakes(project.No)"
+                    style="white-space: nowrap; font-weight: bold"
                   >
                     查看负责人
                   </button>
@@ -109,8 +154,9 @@
                   type="button"
                   class="btn btn-warning"
                   @click="toggleUpdateProjectModal(project)"
+                  style="white-space: nowrap; font-weight: bold"
                 >
-                  Update
+                  更新
                 </button>
               </td>
               <td>
@@ -118,8 +164,9 @@
                   type="button"
                   class="btn btn-danger"
                   @click="handleDeleteProject(project.No)"
+                  style="white-space: nowrap; font-weight: bold"
                 >
-                  Delete
+                  删除
                 </button>
               </td>
             </tr>
@@ -181,7 +228,7 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="submitAddProjectForm">
               <div class="mb-3">
                 <label class="form-label">项目号</label>
                 <input
@@ -253,9 +300,8 @@
 
               <div class="d-flex justify-content-evenly">
                 <button
-                  type="button"
+                  type="submit"
                   class="btn btn-primary"
-                  @click="addProject(addProjectForm)"
                 >
                   提交
                 </button>
@@ -299,7 +345,7 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="submitTakeProjectForm">
               <div class="mb-3">
                 <label class="form-label">教师工号</label>
                 <input
@@ -338,10 +384,8 @@
               </div>
               <div class="d-flex justify-content-evenly">
                 <button
-                  type="button"
+                  type="submit"
                   class="btn btn-primary"
-                  @click="takeProject(takeProjectForm, takeProjectForm.projectNo)
-                    "
                 >
                   提交
                 </button>
@@ -385,7 +429,7 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="submitUpdateProjectForm">
               <div class="mb-3">
                 <label class="form-label">项目号</label>
                 <input
@@ -456,10 +500,8 @@
               </div>
               <div class="d-flex justify-content-evenly">
                 <button
-                  type="button"
+                  type="submit"
                   class="btn btn-primary"
-                  @click="updateProject(updateProjectForm, updateProjectForm.No)
-                    "
                 >
                   提交
                 </button>
@@ -507,7 +549,7 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="submitUpdateTakeForm">
               <div class="mb-3">
                 <label class="form-label">教师工号</label>
                 <input
@@ -548,14 +590,8 @@
               </div>
               <div class="d-flex justify-content-evenly">
                 <button
-                  type="button"
+                  type="submit"
                   class="btn btn-primary"
-                  @click="updateTake(
-                      updateTakeForm,
-                      updateTakeForm.teacherNo,
-                      updateTakeForm.projectNo
-                    )
-                    "
                 >
                   提交
                 </button>
@@ -586,6 +622,7 @@
 <script>
 import axios from 'axios'
 import _ from 'lodash'
+import { getProjectType } from '../utils/helpFunc.vue'
 
 export default {
   data () {
@@ -632,6 +669,7 @@ export default {
       currentPage: 1,
       pageSize: 5,
       projectNo: '',
+      teacherNo: '',
     }
   },
 
@@ -654,23 +692,43 @@ export default {
       return pagesArray
     },
 
-    activeModal () {
+    addProjectFormValid () {
       return (
-        this.activeAddProjectModal ||
-        this.activeTakeProjectModal ||
-        this.activeUpdateProjectModal ||
-        this.activeEditTakeModal
+        this.addProjectForm.projectNo &&
+        this.addProjectForm.name &&
+        this.addProjectForm.source &&
+        this.addProjectForm.type &&
+        this.addProjectForm.funds &&
+        this.addProjectForm.startYear &&
+        this.addProjectForm.endYear
       )
     },
 
-    controlModal () {
-      const body = document.querySelector('body')
-      if (this.activeModal) {
-        this.showAlert = false
-        body.classList.add('modal-open')
-      } else {
-        body.classList.remove('modal-open')
-      }
+    takeProjectFormValid () {
+      return (
+        this.takeProjectForm.teacherNo &&
+        this.takeProjectForm.projectNo &&
+        this.takeProjectForm.rank &&
+        this.takeProjectForm.takeFunds
+      )
+    },
+
+    updateProjectFormValid () {
+      return (
+        this.updateProjectForm.name &&
+        this.updateProjectForm.source &&
+        this.updateProjectForm.type &&
+        this.updateProjectForm.funds &&
+        this.updateProjectForm.startYear &&
+        this.updateProjectForm.endYear
+      )
+    },
+
+    updateTakeFormValid () {
+      return (
+        this.updateTakeForm.rank &&
+        this.updateTakeForm.takeFunds
+      )
     },
   },
 
@@ -679,6 +737,50 @@ export default {
       // 跳转到指定页
       if (page >= 1 && page <= this.totalPages) {
         this.currentPage = page
+      }
+    },
+
+    setAlertMessage (message) {
+      this.message = message
+      this.showAlert = true
+    },
+
+    submitAddProjectForm () {
+      if (this.addProjectFormValid) {
+        this.addProject(this.addProjectForm)
+      } else {
+        this.setAlertMessage('请填写完整的项目信息')
+      }
+    },
+
+    submitTakeProjectForm () {
+      if (this.takeProjectFormValid) {
+        this.takeProject(this.takeProjectForm, this.takeProjectForm.projectNo)
+      } else {
+        this.setAlertMessage('请填写完整的承担项目信息')
+      }
+    },
+
+    submitUpdateProjectForm () {
+      if (this.updateProjectFormValid) {
+        this.updateProject(
+          this.updateProjectForm,
+          this.updateProjectForm.No
+        )
+      } else {
+        this.setAlertMessage('请填写完整的项目信息')
+      }
+    },
+
+    submitUpdateTakeForm () {
+      if (this.updateTakeFormValid) {
+        this.updateTake(
+          this.updateTakeForm,
+          this.updateTakeForm.teacherNo,
+          this.updateTakeForm.projectNo
+        )
+      } else {
+        this.setAlertMessage('请填写完整的承担项目信息')
       }
     },
 
@@ -708,13 +810,41 @@ export default {
       }
     },
 
-    getProjects () {
+    getProjects (flag = false) {
+      if (this.teacherNo) {
+        this.queryProject(this.teacherNo, flag)
+      } else {
+        this.getAllProjects(flag)
+      }
+    },
+
+    queryProject (teacherNo, flag = false) {
+      // 查询论文信息
+      const path = `http://localhost:5000/projects/teacher/${teacherNo}`
+      axios
+        .get(path)
+        .then((res) => {
+          if (!flag) {
+            this.message = res.data.message
+          }
+          this.showMessage = true
+          if (res.data.status) {
+            this.projects = res.data.projects
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    },
+
+    getAllProjects (flag = false) {
       // 获取项目信息
       const path = 'http://localhost:5000/projects'
       axios
         .get(path)
         .then((res) => {
           this.projects = res.data.projects
+          this.showMessage = flag
         })
         .catch((error) => {
           console.error(error)
@@ -727,7 +857,7 @@ export default {
       axios
         .put(path, payload)
         .then((res) => {
-          this.getProjects()
+          this.getProjects(true)
           this.message = res.data.message
           if (this.manageMessage(res.data.status)) {
             this.initForm()
@@ -742,6 +872,9 @@ export default {
 
     toggleAddProjectModal () {
       this.activeAddProjectModal = !this.activeAddProjectModal
+      if (this.activeAddProjectModal) {
+        this.showAlert = false
+      }
     },
 
     getTakes (projectNo) {
@@ -763,7 +896,7 @@ export default {
       axios
         .put(path, payload)
         .then((res) => {
-          this.getProjects()
+          this.getProjects(true)
           this.message = res.data.message
           if (this.manageMessage(res.data.status)) {
             this.initForm()
@@ -779,6 +912,9 @@ export default {
 
     toggleTakeProjectModal () {
       this.activeTakeProjectModal = !this.activeTakeProjectModal
+      if (this.activeTakeProjectModal) {
+        this.showAlert = false
+      }
     },
 
     updateProject (payload, projectNo) {
@@ -787,7 +923,7 @@ export default {
       axios
         .post(path, payload)
         .then((res) => {
-          this.getProjects()
+          this.getProjects(true)
           this.message = res.data.message
           if (this.manageMessage(res.data.status)) {
             this.toggleUpdateProjectModal(null)
@@ -813,6 +949,9 @@ export default {
         this.updateProjectForm = _.cloneDeep(project)
       }
       this.activeUpdateProjectModal = !this.activeUpdateProjectModal
+      if (this.activeUpdateProjectModal) {
+        this.showAlert = false
+      }
     },
 
     handleDeleteProject (projectNo) {
@@ -821,7 +960,7 @@ export default {
       axios
         .delete(path)
         .then((res) => {
-          this.getProjects()
+          this.getProjects(true)
           this.message = res.data.message
           this.showMessage = true
         })
@@ -881,25 +1020,41 @@ export default {
         this.updateTakeForm = _.cloneDeep(take)
       }
       this.activeEditTakeModal = !this.activeEditTakeModal
+      if (this.activeEditTakeModal) {
+        this.showAlert = false
+      }
     },
 
     fundCheck () {
       // 经费检查
-      const path = `http://localhost:5000/projects/check/${this.projectNo}`
-      axios
-        .get(path)
-        .then((res) => {
-          this.message = res.data.message
-          this.showMessage = true
-        })
-        .catch((error) => {
-          console.error(error)
-        })
+      if (this.projectNo) {
+        const path = `http://localhost:5000/projects/check/${this.projectNo}`
+        axios
+          .get(path)
+          .then((res) => {
+            this.message = res.data.message
+            this.showMessage = true
+          })
+          .catch((error) => {
+            console.error(error)
+          })
+      } else {
+        this.message = '检查失败：项目号不能为空！'
+        this.showMessage = true
+      }
     },
+
+    getProjectType,
   },
 
   created () {
     this.getProjects()
+  },
+
+  mounted () {
+    document.querySelectorAll('.form-outline').forEach((formOutline) => {
+      new mdb.Input(formOutline).update()
+    })
   },
 }
 </script>
@@ -907,5 +1062,7 @@ export default {
 <style scoped>
 .top {
   margin-top: 20px;
+  margin-left: 50px;
+  margin-right: 50px;
 }
 </style>

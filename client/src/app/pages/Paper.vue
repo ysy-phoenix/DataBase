@@ -2,45 +2,89 @@
   <div class="container top scp">
     <div class="row">
       <div class="col-sm-12">
-        <h1 class="text-center">论文</h1>
-        <hr />
+        <h2 class="text-primary text-center">发表论文登记查询</h2>
+        <br />
         <div
           class="alert"
           :class="{
-                  'alert-danger': message.includes('失败'),
-                  'alert-success': !message.includes('失败'),
-              }"
+            'alert-danger': message.includes('失败'),
+            'alert-success': !message.includes('失败'),
+          }"
           role="alert"
           v-if="showMessage"
         >
           {{ message }}
         </div>
-        <button
-          type="button"
-          class="btn btn-success"
-          @click="toggleAddPaperModal"
-        >
-          论文登记
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="togglePublishPaperModal"
-        >
-          发表论文登记
-        </button>
+
+        <div class="d-flex justify-content-center">
+          <div class="d-flex me-3">
+            <button
+              type="button"
+              class="btn btn-success"
+              style="font-weight: bold"
+              @click="toggleAddPaperModal"
+            >
+              论文登记
+            </button>
+          </div>
+          <div class="d-flex me-3">
+            <button
+              type="button"
+              class="btn btn-primary"
+              style="font-weight: bold"
+              @click="togglePublishPaperModal"
+            >
+              发表论文登记
+            </button>
+          </div>
+          <div class="form-outline mb-1 me-3" style="width: 15%">
+            <input type="text" class="form-control" v-model="teacherNo" />
+            <label class="form-label" style="font-weight: bold"
+              >教师工号:</label
+            >
+          </div>
+          <div class="d-flex me-3">
+            <button
+              type="button"
+              class="btn btn-info"
+              @click="getPapers(false)"
+              style="font-weight: bold"
+            >
+              论文查询
+            </button>
+          </div>
+        </div>
+
         <table class="table table-hover text-center table-striped">
           <thead>
-            <tr class="fs-7">
-              <th scope="col">论文序号</th>
-              <th scope="col">论文名称</th>
-              <th scope="col">发表源</th>
-              <th scope="col">发表年份</th>
-              <th scope="col">类型</th>
-              <th scope="col">类别</th>
-              <th scope="col">作者</th>
-              <th scope="col">论文更新</th>
-              <th scope="col">论文删除</th>
+            <tr class="fs-6">
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                论文序号
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                论文名称
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                发表源
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                发表年份
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                类型
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                类别
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                作者
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                论文更新
+              </th>
+              <th scope="col" style="white-space: nowrap; font-weight: bold">
+                论文删除
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -53,16 +97,16 @@
               <td>{{ paper.name }}</td>
               <td>{{ paper.source }}</td>
               <td>{{ paper.publishYear }}</td>
-              <td>{{ paper.type }}</td>
-              <td>{{ paper.level }}</td>
+              <td>{{ getPaperType(paper.type) }}</td>
+              <td>{{ getPaperLevel(paper.level) }}</td>
               <th scope="col">
                 <div class="dropdown">
                   <button
                     class="btn btn-primary dropdown-toggle"
                     type="button"
-                    id="dropdownMenuButton"
                     data-mdb-toggle="dropdown"
                     aria-expanded="false"
+                    style="font-weight: bold; white-space: nowrap"
                     @click="getAuthors(paper.No)"
                   >
                     查看作者
@@ -76,9 +120,9 @@
                         type="button"
                         class="dropdown-item text-center"
                         v-bind:class="{
-                                'text-success': author.isCoAuthor,
-                                'text-black': !author.isCoAuthor,
-                            }"
+                          'text-success': author.isCoAuthor,
+                          'text-black': !author.isCoAuthor,
+                        }"
                         @click="toggleEditAuthorModal(author)"
                       >
                         {{ author.teacherNo }}
@@ -91,23 +135,26 @@
                 <button
                   type="button"
                   class="btn btn-warning"
+                  style="font-weight: bold; white-space: nowrap"
                   @click="toggleUpdatePaperModal(paper)"
                 >
-                  Update
+                  更新
                 </button>
               </td>
               <td>
                 <button
                   type="button"
                   class="btn btn-danger"
+                  style="font-weight: bold; white-space: nowrap"
                   @click="handleDeletePaper(paper.No)"
                 >
-                  Delete
+                  删除
                 </button>
               </td>
             </tr>
           </tbody>
         </table>
+
         <nav>
           <ul class="pagination justify-content-center">
             <li class="page-item" :class="{ disabled: currentPage === 1 }">
@@ -122,7 +169,7 @@
               :class="{ active: page === currentPage }"
             >
               <a class="page-link" href="#" @click="goToPage(page)">{{
-                  page
+                page
               }}</a>
             </li>
             <li
@@ -139,7 +186,7 @@
     </div>
 
     <!-- add new paper modal -->
-    <div
+    <!-- <div
       ref="addPaperModal"
       class="modal fade"
       :class="{ show: activeAddPaperModal, 'd-block': activeAddPaperModal }"
@@ -164,7 +211,7 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="submitAddPaperForm">
               <div class="mb-3">
                 <label class="form-label">论文序号</label>
                 <input
@@ -232,9 +279,8 @@
 
               <div class="d-flex justify-content-evenly">
                 <button
-                  type="button"
+                  type="submit"
                   class="btn btn-primary"
-                  @click="addPaper(addPaperForm)"
                 >
                   提交
                 </button>
@@ -247,16 +293,206 @@
         </div>
       </div>
     </div>
-    <div v-if="activeAddPaperModal" class="modal-backdrop fade show"></div>
+    <div v-if="activeAddPaperModal" class="modal-backdrop fade show"></div> -->
+
+    <!-- Add paper modal -->
+    <div
+      class="modal modal-xl fade"
+      :class="{ show: activeAddPaperModal, 'd-block': activeAddPaperModal }"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addPaperModalLabel"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addPaperModalLabel">添加论文</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+              @click="toggleAddPaperModal"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="submitAddPaperForm">
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <tbody>
+                    <tr>
+                      <td style="width: 200px">
+                        <label class="form-label" style="font-weight: bold"
+                          >论文序号:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addPaperForm.paperNo"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >论文标题:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addPaperForm.name"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >发表源:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addPaperForm.source"
+                          required
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >发表年份:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addPaperForm.publishYear"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label
+                          class="form-label select-label"
+                          style="font-weight: bold"
+                          >论文类型:</label
+                        >
+                        <select
+                          class="form-select"
+                          v-model="addPaperForm.type"
+                          required
+                        >
+                          <option value="1">1-full paper</option>
+                          <option value="2">2-short paper</option>
+                          <option value="3">3-poster paper</option>
+                          <option value="4">4-demo paper</option>
+                        </select>
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >论文级别:</label
+                        >
+                        <select
+                          class="form-select"
+                          v-model="addPaperForm.level"
+                        >
+                          <option value="1">1-CCF-A</option>
+                          <option value="2">2-CCF-B</option>
+                          <option value="3">3-CCF-C</option>
+                          <option value="4">4-中文 CCF-A</option>
+                          <option value="3">5-中文 CCFB</option>
+                          <option value="4">6-无级别</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="text-right">
+                <button type="button" class="btn btn-info" @click="addAuthor">
+                  添加作者
+                </button>
+              </div>
+              <hr />
+              <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                  <thead>
+                    <tr>
+                      <th>论文序号</th>
+                      <th>教师工号</th>
+                      <th>排名</th>
+                      <th>通讯作者</th>
+                      <th>删除</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(author, index) in addAuthors" :key="index">
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control"
+                          disabled="true"
+                          v-model="addPaperForm.paperNo"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="author.teacherNo"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control"
+                          v-model="author.rank"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <div class="d-flex justify-content-center">
+                          <input
+                            type="checkbox"
+                            class="form-check-input"
+                            v-model="author.isCoAuthor"
+                          />
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger"
+                          @click="removeAuthor(index)"
+                        >
+                          <i class="far fa-trash-can"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="d-flex justify-content-evenly">
+                <button type="submit" class="btn btn-primary">提交</button>
+                <button type="button" class="btn btn-danger" @click="initForm">
+                  重置
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- End of Add paper modal -->
 
     <!-- add publish paper modal -->
     <div
       ref="addPaperModal"
       class="modal fade"
       :class="{
-              show: activePublishPaperModal,
-              'd-block': activePublishPaperModal,
-          }"
+        show: activePublishPaperModal,
+        'd-block': activePublishPaperModal,
+      }"
       tabindex="-1"
       role="dialog"
     >
@@ -278,7 +514,7 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="submitPublishPaperForm">
               <div class="mb-3">
                 <label class="form-label">教师工号</label>
                 <input
@@ -315,14 +551,7 @@
                 <label class="form-check-label">是否为通讯作者</label>
               </div>
               <div class="d-flex justify-content-evenly">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="publishPaper(publishPaperForm, publishPaperForm.paperNo)
-                      "
-                >
-                  提交
-                </button>
+                <button type="submit" class="btn btn-primary">提交</button>
                 <button type="button" class="btn btn-danger" @click="initForm">
                   重置
                 </button>
@@ -339,9 +568,9 @@
       ref="updatePaperModal"
       class="modal fade"
       :class="{
-              show: activeUpdatePaperModal,
-              'd-block': activeUpdatePaperModal,
-          }"
+        show: activeUpdatePaperModal,
+        'd-block': activeUpdatePaperModal,
+      }"
       tabindex="-1"
       role="dialog"
     >
@@ -363,7 +592,7 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="submitUpdatePaperForm">
               <div class="mb-3">
                 <label class="form-label">论文序号</label>
                 <input
@@ -429,13 +658,7 @@
                 </select>
               </div>
               <div class="d-flex justify-content-evenly">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="updatePaper(updatePaperForm, updatePaperForm.No)"
-                >
-                  提交
-                </button>
+                <button type="submit" class="btn btn-primary">提交</button>
                 <button
                   type="button"
                   class="btn btn-danger"
@@ -456,9 +679,9 @@
       ref="addPaperModal"
       class="modal fade"
       :class="{
-              show: activeEditAuthorModal,
-              'd-block': activeEditAuthorModal,
-          }"
+        show: activeEditAuthorModal,
+        'd-block': activeEditAuthorModal,
+      }"
       tabindex="-1"
       role="dialog"
     >
@@ -480,7 +703,7 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="submitUpdateAuthorForm">
               <div class="mb-3">
                 <label class="form-label">教师工号</label>
                 <input
@@ -519,18 +742,7 @@
                 <label class="form-check-label">是否为通讯作者</label>
               </div>
               <div class="d-flex justify-content-evenly">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="updateAuthor(
-                          updateAuthorForm,
-                          updateAuthorForm.teacherNo,
-                          updateAuthorForm.paperNo
-                      )
-                      "
-                >
-                  提交
-                </button>
+                <button type="submit" class="btn btn-primary">提交</button>
                 <button
                   type="button"
                   class="btn btn-warning"
@@ -558,308 +770,430 @@
 <script>
 import axios from 'axios'
 import _ from 'lodash'
+import { getPaperLevel, getPaperType } from '../utils/helpFunc.vue'
 
 export default {
-    data () {
-        return {
-            activeAddPaperModal: false,
-            activePublishPaperModal: false,
-            activeUpdatePaperModal: false,
-            activeEditAuthorModal: false,
-            addPaperForm: {
-                paperNo: 0,
-                name: '',
-                source: '',
-                publishYear: '',
-                type: 0,
-                level: 0,
-            },
-            publishPaperForm: {
-                teacherNo: '',
-                paperNo: 0,
-                rank: 0,
-                isCoAuthor: false,
-            },
-            updatePaperForm: {
-                No: 0,
-                name: '',
-                source: '',
-                publishYear: '',
-                type: 0,
-                level: 0,
-            },
-            updateAuthorForm: {
-                teacherNo: '',
-                paperNo: 0,
-                rank: 0,
-                isCoAuthor: false,
-            },
-            authors: [],
-            papers: [],
-            message: '',
-            showMessage: false,
-            showAlert: false,
-            currentPage: 1,
-            pageSize: 5,
+  data() {
+    return {
+      activeAddPaperModal: false,
+      activePublishPaperModal: false,
+      activeUpdatePaperModal: false,
+      activeEditAuthorModal: false,
+      addPaperForm: {
+        paperNo: 0,
+        name: '',
+        source: '',
+        publishYear: '',
+        type: 0,
+        level: 0,
+      },
+      publishPaperForm: {
+        teacherNo: '',
+        paperNo: 0,
+        rank: 0,
+        isCoAuthor: false,
+      },
+      updatePaperForm: {
+        No: 0,
+        name: '',
+        source: '',
+        publishYear: '',
+        type: 0,
+        level: 0,
+      },
+      updateAuthorForm: {
+        teacherNo: '',
+        paperNo: 0,
+        rank: 0,
+        isCoAuthor: false,
+      },
+      authors: [],
+      addAuthors: [],
+      papers: [],
+      message: '',
+      showMessage: false,
+      showAlert: false,
+      currentPage: 1,
+      pageSize: 5,
+      teacherNo: '',
+    }
+  },
+
+  computed: {
+    totalPages() {
+      return Math.ceil(this.papers.length / this.pageSize)
+    },
+
+    displayedPapers() {
+      const startIndex = (this.currentPage - 1) * this.pageSize
+      const endIndex = startIndex + this.pageSize
+      return this.papers.slice(startIndex, endIndex)
+    },
+
+    pages() {
+      const pagesArray = []
+      for (let i = 1; i <= this.totalPages; ++i) {
+        pagesArray.push(i)
+      }
+      return pagesArray
+    },
+
+    addPaperFormValid() {
+      return (
+        this.addPaperForm.paperNo &&
+        this.addPaperForm.name &&
+        this.addPaperForm.source &&
+        this.addPaperForm.publishYear &&
+        this.addPaperForm.type &&
+        this.addPaperForm.level
+      )
+    },
+
+    publishPaperFormValid() {
+      return (
+        this.publishPaperForm.teacherNo &&
+        this.publishPaperForm.paperNo &&
+        this.publishPaperForm.rank
+      )
+    },
+
+    updatePaperFormValid() {
+      return (
+        this.updatePaperForm.name &&
+        this.updatePaperForm.source &&
+        this.updatePaperForm.publishYear &&
+        this.updatePaperForm.type &&
+        this.updatePaperForm.level
+      )
+    },
+
+    updateAuthorFormValid() {
+      return (
+        this.updateAuthorForm.rank &&
+        this.updateAuthorForm.isCoAuthor !== undefined
+      )
+    },
+  },
+
+  methods: {
+    addAuthor() {
+      this.addAuthors.push({
+        teacherNo: '',
+        rank: '',
+        isCoAuthor: false,
+      })
+    },
+
+    removeAuthor(index) {
+      this.addAuthors.splice(index, 1)
+    },
+
+    goToPage(page) {
+      // 跳转到指定页
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page
+      }
+    },
+
+    setAlertMessage(message) {
+      this.message = message
+      this.showAlert = true
+    },
+
+    submitAddPaperForm() {
+      if (this.addPaperFormValid) {
+        this.addPaper(this.addPaperForm)
+      } else {
+        this.setAlertMessage('请填写完整信息')
+      }
+    },
+
+    submitPublishPaperForm() {
+      if (this.publishPaperFormValid) {
+        this.publishPaper(this.publishPaperForm, this.publishPaperForm.paperNo)
+      } else {
+        this.setAlertMessage('请填写完整信息')
+      }
+    },
+
+    submitUpdatePaperForm() {
+      if (this.updatePaperFormValid) {
+        this.updatePaper(this.updatePaperForm, this.updatePaperForm.No)
+      } else {
+        this.setAlertMessage('请填写完整信息')
+      }
+    },
+
+    submitUpdateAuthorForm() {
+      if (this.updateAuthorFormValid) {
+        this.updateAuthor(
+          this.updateAuthorForm,
+          this.updateAuthorForm.teacherNo,
+          this.updateAuthorForm.paperNo
+        )
+      } else {
+        this.setAlertMessage('请填写完整信息')
+      }
+    },
+
+    initForm() {
+      // 初始化/重置表单
+      this.addPaperForm.paperNo = 0
+      this.addPaperForm.name = ''
+      this.addPaperForm.source = ''
+      this.addPaperForm.publishYear = ''
+      this.addPaperForm.type = 0
+      this.addPaperForm.level = 0
+      // publishPaperForm
+      this.publishPaperForm.teacherNo = ''
+      this.publishPaperForm.paperNo = 0
+      this.publishPaperForm.rank = 0
+      this.publishPaperForm.isCoAuthor = false
+    },
+
+    manageMessage(status) {
+      if (status) {
+        this.showMessage = true
+        return true
+      } else {
+        this.showAlert = true
+        return false
+      }
+    },
+
+    getPapers(flag = false) {
+      if (this.teacherNo) {
+        this.queryPaper(this.teacherNo, flag)
+      } else {
+        this.getAllPapers(flag)
+      }
+    },
+
+    queryPaper(teacherNo, flag = false) {
+      // 查询论文信息
+      const path = `http://localhost:5000/papers/teacher/${teacherNo}`
+      axios
+        .get(path)
+        .then((res) => {
+          if (!flag) {
+            this.message = res.data.message
+          }
+          this.showMessage = true
+          if (res.data.status) {
+            this.papers = res.data.papers
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    },
+
+    getAllPapers(flag = false) {
+      // 获取论文信息
+      const path = 'http://localhost:5000/papers'
+      axios
+        .get(path)
+        .then((res) => {
+          this.papers = res.data.papers
+          this.showMessage = flag
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    },
+
+    addPaper(payload) {
+      // 添加论文信息
+      const path = 'http://localhost:5000/papers'
+      axios
+        .put(path, payload)
+        .then((res) => {
+          this.getPapers()
+          this.message = res.data.message
+          if (this.manageMessage(res.data.status)) {
+            this.initForm()
+            this.toggleAddPaperModal()
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          this.getPapers()
+        })
+    },
+
+    toggleAddPaperModal() {
+      this.activeAddPaperModal = !this.activeAddPaperModal
+      if (this.activeAddPaperModal) {
+        this.showAlert = false
+      }
+    },
+
+    getAuthors(paperNo) {
+      // 获取论文作者信息
+      const path = `http://localhost:5000/papers/${paperNo}`
+      axios
+        .get(path)
+        .then((res) => {
+          this.authors = res.data.authors
+        })
+        .catch((error) => {
+          console.error(error)
+        })
+    },
+
+    publishPaper(payload, paperNo) {
+      // 添加发表论文信息
+      const path = `http://localhost:5000/papers/${paperNo}`
+      axios
+        .put(path, payload)
+        .then((res) => {
+          this.getPapers(true)
+          this.message = res.data.message
+          if (this.manageMessage(res.data.status)) {
+            this.initForm()
+            this.togglePublishPaperModal()
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          this.getPapers()
+        })
+      return false
+    },
+
+    togglePublishPaperModal() {
+      this.activePublishPaperModal = !this.activePublishPaperModal
+      if (this.activePublishPaperModal) {
+        this.showAlert = false
+      }
+    },
+
+    updatePaper(payload, paperNo) {
+      // 更新论文信息
+      const path = `http://localhost:5000/papers/${paperNo}`
+      axios
+        .post(path, payload)
+        .then((res) => {
+          this.getPapers(true)
+          this.message = res.data.message
+          if (this.manageMessage(res.data.status)) {
+            this.toggleUpdatePaperModal(null)
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          this.getPapers()
+        })
+    },
+
+    resetUpdatePaperForm() {
+      for (let i = 0; i < this.displayedPapers.length; ++i) {
+        if (this.displayedPapers[i].No === this.updatePaperForm.No) {
+          this.updatePaperForm = _.cloneDeep(this.displayedPapers[i])
+          break
         }
+      }
     },
 
-    computed: {
-        totalPages () {
-            return Math.ceil(this.papers.length / this.pageSize)
-        },
-
-        displayedPapers () {
-            const startIndex = (this.currentPage - 1) * this.pageSize
-            const endIndex = startIndex + this.pageSize
-            return this.papers.slice(startIndex, endIndex)
-        },
-
-        pages () {
-            const pagesArray = []
-            for (let i = 1; i <= this.totalPages; ++i) {
-                pagesArray.push(i)
-            }
-            return pagesArray
-        },
-
-        activeModal () {
-            return (
-                this.activeAddPaperModal ||
-                this.activePublishPaperModal ||
-                this.activeUpdatePaperModal ||
-                this.activeEditAuthorModal
-            )
-        },
-
-        controlModal () {
-            const body = document.querySelector('body')
-            if (this.activeModal) {
-                this.showAlert = false
-                body.classList.add('modal-open')
-            } else {
-                body.classList.remove('modal-open')
-            }
-        },
+    toggleUpdatePaperModal(paper) {
+      if (paper) {
+        this.updatePaperForm = _.cloneDeep(paper)
+      }
+      this.activeUpdatePaperModal = !this.activeUpdatePaperModal
+      if (this.activeUpdatePaperModal) {
+        this.showAlert = false
+      }
     },
 
-    methods: {
-        goToPage (page) {
-            // 跳转到指定页
-            if (page >= 1 && page <= this.totalPages) {
-                this.currentPage = page
-            }
-        },
-
-        initForm () {
-            // 初始化/重置表单
-            this.addPaperForm.paperNo = 0
-            this.addPaperForm.name = ''
-            this.addPaperForm.source = ''
-            this.addPaperForm.publishYear = ''
-            this.addPaperForm.type = 0
-            this.addPaperForm.level = 0
-            // publishPaperForm
-            this.publishPaperForm.teacherNo = ''
-            this.publishPaperForm.paperNo = 0
-            this.publishPaperForm.rank = 0
-            this.publishPaperForm.isCoAuthor = false
-        },
-
-        manageMessage (status) {
-            if (status) {
-                this.showMessage = true
-                return true
-            } else {
-                this.showAlert = true
-                return false
-            }
-        },
-
-        getPapers () {
-            // 获取论文信息
-            const path = 'http://localhost:5000/papers'
-            axios
-                .get(path)
-                .then((res) => {
-                    this.papers = res.data.papers
-                })
-                .catch((error) => {
-                    console.error(error)
-                })
-        },
-
-        addPaper (payload) {
-            // 添加论文信息
-            const path = 'http://localhost:5000/papers'
-            axios
-                .put(path, payload)
-                .then((res) => {
-                    this.getPapers()
-                    this.message = res.data.message
-                    if (this.manageMessage(res.data.status)) {
-                        this.initForm()
-                        this.toggleAddPaperModal()
-                    }
-                })
-                .catch((error) => {
-                    console.error(error)
-                    this.getPapers()
-                })
-        },
-
-        toggleAddPaperModal () {
-            this.activeAddPaperModal = !this.activeAddPaperModal
-        },
-
-        getAuthors (paperNo) {
-            // 获取论文作者信息
-            const path = `http://localhost:5000/papers/${paperNo}`
-            axios
-                .get(path)
-                .then((res) => {
-                    this.authors = res.data.authors
-                })
-                .catch((error) => {
-                    console.error(error)
-                })
-        },
-
-        publishPaper (payload, paperNo) {
-            // 添加发表论文信息
-            const path = `http://localhost:5000/papers/${paperNo}`
-            axios
-                .put(path, payload)
-                .then((res) => {
-                    this.getPapers()
-                    this.message = res.data.message
-                    if (this.manageMessage(res.data.status)) {
-                        this.initForm()
-                        this.togglePublishPaperModal()
-                    }
-                })
-                .catch((error) => {
-                    console.error(error)
-                    this.getPapers()
-                })
-            return false
-        },
-
-        togglePublishPaperModal () {
-            this.activePublishPaperModal = !this.activePublishPaperModal
-        },
-
-        updatePaper (payload, paperNo) {
-            // 更新论文信息
-            const path = `http://localhost:5000/papers/${paperNo}`
-            axios
-                .post(path, payload)
-                .then((res) => {
-                    this.getPapers()
-                    this.message = res.data.message
-                    if (this.manageMessage(res.data.status)) {
-                        this.toggleUpdatePaperModal(null)
-                    }
-                })
-                .catch((error) => {
-                    console.error(error)
-                    this.getPapers()
-                })
-        },
-
-        resetUpdatePaperForm () {
-            for (let i = 0; i < this.displayedPapers.length; ++i) {
-                if (this.displayedPapers[i].No === this.updatePaperForm.No) {
-                    this.updatePaperForm = _.cloneDeep(this.displayedPapers[i])
-                    break
-                }
-            }
-        },
-
-        toggleUpdatePaperModal (paper) {
-            if (paper) {
-                this.updatePaperForm = _.cloneDeep(paper)
-            }
-            this.activeUpdatePaperModal = !this.activeUpdatePaperModal
-        },
-
-        handleDeletePaper (paperNo) {
-            // 删除论文
-            const path = `http://localhost:5000/papers/${paperNo}`
-            axios
-                .delete(path)
-                .then((res) => {
-                    this.getPapers()
-                    this.message = res.data.message
-                    this.showMessage = true
-                })
-                .catch((error) => {
-                    console.error(error)
-                    this.getPapers()
-                })
-        },
-
-        updateAuthor (payload, teacherNo, paperNo) {
-            // 更新论文发表信息
-            const path = `http://localhost:5000/papers/${paperNo}/${teacherNo}`
-            axios
-                .post(path, payload)
-                .then((res) => {
-                    this.getAuthors(paperNo)
-                    this.message = res.data.message
-                    if (this.manageMessage(res.data.status)) {
-                        this.toggleEditAuthorModal(null)
-                    }
-                })
-                .catch((error) => {
-                    console.error(error)
-                    this.getAuthors(paperNo)
-                })
-        },
-
-        resetAuthorForm () {
-            for (let i = 0; i < this.authors.length; ++i) {
-                if (authors[i].teacherNo === this.updateAuthorForm.teacherNo) {
-                    this.updateAuthorForm = _.cloneDeep(this.authors[i])
-                    break
-                }
-            }
-        },
-
-        deleteAuthor () {
-            // 删除论文登记
-            const path = `http://localhost:5000/papers/${this.updateAuthorForm.paperNo}/${this.updateAuthorForm.teacherNo}`
-            axios
-                .delete(path)
-                .then((res) => {
-                    this.getAuthors(this.updateAuthorForm.paperNo)
-                    this.message = res.data.message
-                    if (this.manageMessage(res.data.status)) {
-                        this.toggleEditAuthorModal(null)
-                    }
-                })
-                .catch((error) => {
-                    console.error(error)
-                    this.getAuthors(this.updateAuthorForm.paperNo)
-                })
-        },
-
-        toggleEditAuthorModal (author) {
-            if (author) {
-                this.updateAuthorForm = _.cloneDeep(author)
-            }
-            this.activeEditAuthorModal = !this.activeEditAuthorModal
-        },
+    handleDeletePaper(paperNo) {
+      // 删除论文
+      const path = `http://localhost:5000/papers/${paperNo}`
+      axios
+        .delete(path)
+        .then((res) => {
+          this.getPapers(true)
+          this.message = res.data.message
+          this.showMessage = true
+        })
+        .catch((error) => {
+          console.error(error)
+          this.getPapers()
+        })
     },
 
-    created () {
-        this.getPapers()
+    updateAuthor(payload, teacherNo, paperNo) {
+      // 更新论文发表信息
+      const path = `http://localhost:5000/papers/${paperNo}/${teacherNo}`
+      axios
+        .post(path, payload)
+        .then((res) => {
+          this.getAuthors(paperNo)
+          this.message = res.data.message
+          if (this.manageMessage(res.data.status)) {
+            this.toggleEditAuthorModal(null)
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          this.getAuthors(paperNo)
+        })
     },
+
+    resetAuthorForm() {
+      for (let i = 0; i < this.authors.length; ++i) {
+        if (authors[i].teacherNo === this.updateAuthorForm.teacherNo) {
+          this.updateAuthorForm = _.cloneDeep(this.authors[i])
+          break
+        }
+      }
+    },
+
+    deleteAuthor() {
+      // 删除论文登记
+      const path = `http://localhost:5000/papers/${this.updateAuthorForm.paperNo}/${this.updateAuthorForm.teacherNo}`
+      axios
+        .delete(path)
+        .then((res) => {
+          this.getAuthors(this.updateAuthorForm.paperNo)
+          this.message = res.data.message
+          if (this.manageMessage(res.data.status)) {
+            this.toggleEditAuthorModal(null)
+          }
+        })
+        .catch((error) => {
+          console.error(error)
+          this.getAuthors(this.updateAuthorForm.paperNo)
+        })
+    },
+
+    toggleEditAuthorModal(author) {
+      if (author) {
+        this.updateAuthorForm = _.cloneDeep(author)
+      }
+      this.activeEditAuthorModal = !this.activeEditAuthorModal
+      if (this.activeEditAuthorModal) {
+        this.showAlert = false
+      }
+    },
+
+    getPaperLevel,
+    getPaperType,
+  },
+
+  created() {
+    this.getPapers()
+  },
+
+  mounted() {
+    document.querySelectorAll('.form-outline').forEach((formOutline) => {
+      new mdb.Input(formOutline).update()
+    })
+  },
 }
 </script>
 
 <style scoped>
 .top {
-    margin-top: 20px;
+  margin-top: 20px;
 }
 </style>

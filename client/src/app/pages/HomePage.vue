@@ -192,6 +192,6 @@ import Query from './Query.vue'
 
 <style>
 .mar {
-    margin: 20px;
+    margin: 10px;
 }
 </style>

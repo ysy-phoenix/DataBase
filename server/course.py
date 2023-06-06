@@ -44,6 +44,18 @@ def edit_course_teacher(courseNo):
     response = {"status": True}
     if request.method == "PUT":  # 增加课程主讲
         post_data = request.get_json()
+        teacher = Teacher.query.filter_by(No=post_data.get("teacherNo")).all()
+        if not teacher:
+            response["status"] = False
+            response["message"] = "教师工号不存在！"
+            return jsonify(response)
+
+        course = Course.query.filter_by(No=courseNo).first()
+        if not course:
+            response["status"] = False
+            response["message"] = "课程不存在！"
+            return jsonify(response)
+
         course = TeachCourse.query.filter_by(
             courseNo=post_data.get("courseNo"), teacherNo=post_data.get("teacherNo")
         ).first()
@@ -165,4 +177,23 @@ def check_creditHour(courseNo):
         response["message"] = "课程学时核算失败！登记总学时为 {}，实际承担总学时为 {}！".format(
             course.creditHour, sum
         )
+    return jsonify(response)
+
+@course_blueprint.route("/courses/teacher/<teacherNo>", methods=["GET"])
+def query_courses(teacherNo):
+    response = {"status": True}
+    if request.method == "GET":
+        teacher = Teacher.query.filter_by(No=teacherNo).first()
+        if not teacher:
+            response["status"] = False
+            response["message"] = "查询失败：教师工号不存在！"
+            return jsonify(response)
+        results = (
+            db.session.query(Course, TeachCourse)
+            .join(Course, Course.No == TeachCourse.courseNo)
+            .filter(TeachCourse.teacherNo == teacherNo)
+            .all()
+        )
+        response["courses"] = [result.Course.json() for result in results]
+        response["message"] = "查询成功！"
     return jsonify(response)

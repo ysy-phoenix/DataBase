@@ -53,6 +53,18 @@ def edit_paper_author(paperNo):
     response = {"status": True}
     if request.method == "PUT":  # 增加论文发表
         post_data = request.get_json()
+        teacher = Teacher.query.filter_by(No=post_data.get("teacherNo")).first()
+        if not teacher:
+            response["status"] = False
+            response["message"] = "教师工号不存在！"
+            return jsonify(response)
+
+        paper = Paper.query.filter_by(No=post_data.get("paperNo")).first()
+        if not paper:
+            response["status"] = False
+            response["message"] = "论文不存在！"
+            return jsonify(response)
+
         paper = PublishedPapers.query.filter_by(
             paperNo=post_data.get("paperNo"), teacherNo=post_data.get("teacherNo")
         ).first()
@@ -191,4 +203,24 @@ def update_delete_author(paperNo, teacherNo):
             db.session.rollback()
             response["status"] = False
             response["message"] = "论文发表删除失败！"
+    return jsonify(response)
+
+
+@paper_blueprint.route("/papers/teacher/<teacherNo>", methods=["GET"])
+def query_papers(teacherNo):
+    response = {"status": True}
+    if request.method == "GET":
+        teacher = Teacher.query.filter_by(No=teacherNo).first()
+        if not teacher:
+            response["status"] = False
+            response["message"] = "查询失败：教师工号不存在！"
+            return jsonify(response)
+        results = (
+            db.session.query(Paper, PublishedPapers)
+            .join(Paper, PublishedPapers.paperNo == Paper.No)
+            .filter(PublishedPapers.teacherNo == teacherNo)
+            .all()
+        )
+        response["papers"] = [result.Paper.json() for result in results]
+        response["message"] = "查询成功！"
     return jsonify(response)

@@ -49,6 +49,18 @@ def edit_project_take(projectNo):
     response = {"status": True}
     if request.method == "PUT":  # 增加项目承担
         post_data = request.get_json()
+        teacher = Teacher.query.filter_by(No=post_data.get("teacherNo")).first()
+        if not teacher:
+            response["status"] = False
+            response["message"] = "教师工号不存在！"
+            return jsonify(response)
+
+        project = Project.query.filter_by(No=post_data.get("projectNo")).first()
+        if not project:
+            response["status"] = False
+            response["message"] = "项目不存在！"
+            return jsonify(response)
+
         project = TakeProject.query.filter_by(
             projectNo=post_data.get("projectNo"), teacherNo=post_data.get("teacherNo")
         ).first()
@@ -190,4 +202,23 @@ def check_funds(projectNo):
         response["message"] = "项目经费核算失败！登记经费总额为 {}，实际经费总额为 {}！".format(
             project.funds, sum
         )
+    return jsonify(response)
+
+@project_blueprint.route("/projects/teacher/<teacherNo>", methods=["GET"])
+def query_projects(teacherNo):
+    response = {"status": True}
+    if request.method == "GET":
+        teacher = Teacher.query.filter_by(No=teacherNo).first()
+        if not teacher:
+            response["status"] = False
+            response["message"] = "查询失败：教师工号不存在！"
+            return jsonify(response)
+        results = (
+            db.session.query(Project, TakeProject)
+            .join(Project, Project.No == TakeProject.projectNo)
+            .filter(TakeProject.teacherNo == teacherNo)
+            .all()
+        )
+        response["projects"] = [result.Project.json() for result in results]
+        response["message"] = "查询成功！"
     return jsonify(response)
