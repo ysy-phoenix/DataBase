@@ -13,121 +13,190 @@ def all_papers():
     response = {"status": True}
     if request.method == "PUT":
         post_data = request.get_json()
+        post_paper = post_data.get("paper")
+        authors = post_data.get("authors")
+
         # case1 主码重复
-        paper = Paper.query.filter_by(No=post_data.get("paperNo")).first()
+        paper = Paper.query.filter_by(No=post_paper.get("paperNo")).first()
         if paper:
             response["status"] = False
             response["message"] = "论文序号重复！"
             return jsonify(response)
 
         # case2 论文名引号检测
-        if re.search("[\"']", post_data.get("name")):
+        if re.search("[\"']", post_paper.get("name")):
             response["status"] = False
             response["message"] = "论文名称不允许带引号！"
             return jsonify(response)
 
-        # case3 数据类型不符或者约束不满足
+        # case3 作者检查
+        if len(authors) == 0:
+            response["status"] = False
+            response["message"] = "必须提供作者信息！"
+            return jsonify(response)
+        teacherNo = set()
+        ranks = set()
+        isCoAuthor = False
+        for author in authors:
+            teacher = Teacher.query.filter_by(No=author["teacherNo"]).first()
+            if not teacher:
+                response["status"] = False
+                response["message"] = "教师 " + author["teacherNo"] + " 不存在！"
+                return jsonify(response)
+            if author.get("teacherNo") in teacherNo:
+                response["status"] = False
+                response["message"] = "作者 " + author["teacherNo"] + " 重复！"
+                return jsonify(response)
+            if author.get("rank") in ranks:
+                response["status"] = False
+                response["message"] = "论文排名重复！"
+                return jsonify(response)
+            if isCoAuthor and author.get("isCoAuthor"):
+                response["status"] = False
+                response["message"] = "只能有一位通讯作者！"
+                return jsonify(response)
+            if author.get("isCoAuthor"):
+                isCoAuthor = True
+            teacherNo.add(author.get("teacherNo"))
+            ranks.add(author.get("rank"))
+
+        # case4 数据类型不符或者约束不满足
         try:
             add_paper(
-                No=post_data.get("paperNo"),
-                name=post_data.get("name"),
-                source=post_data.get("source"),
-                publishYear=post_data.get("publishYear"),
-                type=post_data.get("type"),
-                level=post_data.get("level"),
+                No=post_paper.get("paperNo"),
+                name=post_paper.get("name"),
+                source=post_paper.get("source"),
+                publishYear=post_paper.get("publishYear"),
+                type=post_paper.get("type"),
+                level=post_paper.get("level"),
             )
-            response["message"] = "论文添加成功！"
         except Exception as e:
             print(e)
             db.session.rollback()
             response["status"] = False
             response["message"] = "论文添加失败！数据类型不符或者约束不满足！"
+            return jsonify(response)
+
+        for author in authors:
+            try:
+                add_published_papers(
+                    teacherNo=author.get("teacherNo"),
+                    paperNo=post_paper.get("paperNo"),
+                    rank=author.get("rank"),
+                    isCoAuthor=author.get("isCoAuthor"),
+                )
+            except Exception as e:
+                print(e)
+                db.session.rollback()
+                response["status"] = False
+                response["message"] = "论文作者登记失败！数据类型不符或者约束不满足！"
+                return jsonify(response)
+        db.session.commit()
+        response["message"] = "发表论文登记成功！"
+
     elif request.method == "GET":
         papers = Paper.query.all()
         response["papers"] = [paper.json() for paper in papers]
     return jsonify(response)
 
 
-@paper_blueprint.route("/papers/<paperNo>", methods=["PUT", "POST", "GET", "DELETE"])
+@paper_blueprint.route("/papers/<paperNo>", methods=["POST", "GET", "DELETE"])
 def edit_paper_author(paperNo):
     response = {"status": True}
-    if request.method == "PUT":  # 增加论文发表
+    if request.method == "POST":  # 修改论文信息
         post_data = request.get_json()
-        teacher = Teacher.query.filter_by(No=post_data.get("teacherNo")).first()
-        if not teacher:
+        post_paper = post_data.get("paper")
+        authors = post_data.get("authors")
+
+        paper = Paper.query.filter_by(No=paperNo).first()
+
+        if re.search("[\"']", post_paper.get("name")):
             response["status"] = False
-            response["message"] = "教师工号不存在！"
+            response["message"] = "论文名称不允许带引号！"
             return jsonify(response)
 
-        paper = Paper.query.filter_by(No=post_data.get("paperNo")).first()
-        if not paper:
+        if len(authors) == 0:
             response["status"] = False
-            response["message"] = "论文不存在！"
+            response["message"] = "必须提供作者信息！"
             return jsonify(response)
 
-        paper = PublishedPapers.query.filter_by(
-            paperNo=post_data.get("paperNo"), teacherNo=post_data.get("teacherNo")
-        ).first()
+        old_authors = PublishedPapers.query.filter_by(paperNo=paperNo).all()
+        delete_authors = set([author.teacherNo for author in old_authors])
+        add_authors = set()
 
-        # case1 主码重复
-        if paper:
-            response["status"] = False
-            response["message"] = "论文发表重复！"
-            return jsonify(response)
-
-        # case2 排名重复
-        paper = PublishedPapers.query.filter_by(
-            paperNo=post_data.get("paperNo"), rank=post_data.get("rank")
-        ).first()
-        if paper:
-            response["status"] = False
-            response["message"] = "排名重复！"
-            return jsonify(response)
-
-        # case3 只能有一位通讯作者
-        if post_data.get("isCoAuthor"):
-            paper = PublishedPapers.query.filter_by(
-                paperNo=post_data.get("paperNo"), isCoAuthor=True
-            ).first()
-            if paper:
+        # 作者检查
+        teacherNo = set()
+        ranks = set()
+        isCoAuthor = False
+        for author in authors:
+            teacher = Teacher.query.filter_by(No=author["teacherNo"]).first()
+            if not teacher:
+                response["status"] = False
+                response["message"] = "教师 " + author["teacherNo"] + " 不存在！"
+                return jsonify(response)
+            if author.get("teacherNo") in teacherNo:
+                response["status"] = False
+                response["message"] = "作者 " + author["teacherNo"] + " 重复！"
+                return jsonify(response)
+            if author.get("rank") in ranks:
+                response["status"] = False
+                response["message"] = "论文排名重复！"
+                return jsonify(response)
+            if isCoAuthor and author.get("isCoAuthor"):
                 response["status"] = False
                 response["message"] = "只能有一位通讯作者！"
                 return jsonify(response)
+            if author.get("isCoAuthor"):
+                isCoAuthor = True
+            teacherNo.add(author.get("teacherNo"))
+            ranks.add(author.get("rank"))
+            if author["teacherNo"] in delete_authors:
+                delete_authors.remove(author["teacherNo"])
+            else:
+                add_authors.add(author["teacherNo"])
 
-        # case4 数据类型不符或约束不满足
         try:
-            add_published_papers(
-                teacherNo=post_data.get("teacherNo"),
-                paperNo=paperNo,
-                rank=post_data.get("rank"),
-                isCoAuthor=post_data.get("isCoAuthor"),
-            )
-            response["message"] = "发表论文登记成功！"
-        except Exception as e:
-            print(e)
-            db.session.rollback()
-            response["status"] = False
-            response["message"] = "发表论文登记失败！数据类型不符或者约束不满足！"
-    elif request.method == "POST":  # 修改论文信息
-        post_data = request.get_json()
-        paper = Paper.query.filter_by(No=paperNo).first()
-        if not paper:
-            response["status"] = False
-            response["message"] = "论文不存在！"
-            return jsonify(response)
-        try:
-            paper.name = post_data.get("name")
-            paper.source = post_data.get("source")
-            paper.publishYear = post_data.get("publishYear")
-            paper.type = post_data.get("type")
-            paper.level = post_data.get("level")
-            db.session.commit()
-            response["message"] = "论文修改成功！"
+            paper.name = post_paper.get("name")
+            paper.source = post_paper.get("source")
+            paper.publishYear = post_paper.get("publishYear")
+            paper.type = post_paper.get("type")
+            paper.level = post_paper.get("level")
         except Exception as e:
             print(e)
             db.session.rollback()
             response["status"] = False
             response["message"] = "论文修改失败！数据类型不符或者约束不满足！"
+
+        for author in delete_authors:
+            author = PublishedPapers.query.filter_by(
+                paperNo=paperNo, teacherNo=author
+            ).first()
+            db.session.delete(author)
+
+        for author in authors:
+            try:
+                if author["teacherNo"] in add_authors:
+                    add_published_papers(
+                        teacherNo=author.get("teacherNo"),
+                        paperNo=paperNo,
+                        rank=author.get("rank"),
+                        isCoAuthor=author.get("isCoAuthor"),
+                    )
+                else:
+                    update_author = PublishedPapers.query.filter_by(
+                        paperNo=paperNo, teacherNo=author["teacherNo"]
+                    ).first()
+                    update_author.rank = author.get("rank")
+                    update_author.isCoAuthor = author.get("isCoAuthor")
+            except Exception as e:
+                print(e)
+                db.session.rollback()
+                response["status"] = False
+                response["message"] = "论文作者修改失败！数据类型不符或者约束不满足！"
+                return jsonify(response)
+        response["message"] = "发表论文信息更新成功！"
+        db.session.commit()
+
     elif request.method == "DELETE":  # 删除论文
         paper = Paper.query.filter_by(No=paperNo).first()
         if not paper:
@@ -146,63 +215,6 @@ def edit_paper_author(paperNo):
     elif request.method == "GET":  # 获取论文发表信息
         authors = PublishedPapers.query.filter_by(paperNo=paperNo).all()
         response["authors"] = [author.json() for author in authors]
-    return jsonify(response)
-
-
-@paper_blueprint.route("/papers/<paperNo>/<teacherNo>", methods=["POST", "DELETE"])
-def update_delete_author(paperNo, teacherNo):
-    response = {"status": True}
-    author = PublishedPapers.query.filter_by(
-        paperNo=paperNo, teacherNo=teacherNo
-    ).first()
-    if not author:
-        response["status"] = False
-        response["message"] = "论文发表不存在！"
-        return jsonify(response)
-
-    if request.method == "POST":  # 修改论文发表
-        post_data = request.get_json()
-
-        # case1 排名重复
-        paper = PublishedPapers.query.filter_by(
-            paperNo=post_data.get("paperNo"), rank=post_data.get("rank")
-        ).first()
-        if paper.teacherNo != post_data.get("teacherNo"):
-            response["status"] = False
-            response["message"] = "排名重复！"
-            return jsonify(response)
-
-        # case2 只能有一位通讯作者
-        if post_data.get("isCoAuthor"):
-            paper = PublishedPapers.query.filter_by(
-                paperNo=post_data.get("paperNo"), isCoAuthor=True
-            ).first()
-            if paper:
-                response["status"] = False
-                response["message"] = "只能有一位通讯作者！"
-                return jsonify(response)
-
-        try:
-            author.rank = post_data.get("rank")
-            author.isCoAuthor = post_data.get("isCoAuthor")
-            db.session.commit()
-            response["message"] = "论文发表修改成功！"
-        except Exception as e:
-            print(e)
-            db.session.rollback()
-            response["status"] = False
-            response["message"] = "论文发表修改失败！数据类型不符或者约束不满足！"
-            return jsonify(response)
-    elif request.method == "DELETE":  # 删除论文发表
-        try:
-            db.session.delete(author)
-            db.session.commit()
-            response["message"] = "论文发表删除成功！"
-        except Exception as e:
-            print(e)
-            db.session.rollback()
-            response["status"] = False
-            response["message"] = "论文发表删除失败！"
     return jsonify(response)
 
 

@@ -7,9 +7,9 @@
         <div
           class="alert"
           :class="{
-              'alert-danger': message.includes('失败'),
-              'alert-success': !message.includes('失败'),
-            }"
+            'alert-danger': message.includes('失败'),
+            'alert-success': !message.includes('失败'),
+          }"
           role="alert"
           v-if="showMessage"
         >
@@ -26,34 +26,6 @@
               课程登记
             </button>
           </div>
-          <div class="d-flex me-3">
-            <button
-              type="button"
-              class="btn btn-primary text-nowrap"
-              @click="toggleTeachCourseModal"
-              style="white-space: nowrap; font-weight: bold"
-            >
-              主讲课程登记
-            </button>
-          </div>
-          <div class="form-outline mb-1 me-1" style="width: 15%">
-            <input type="text" class="form-control" v-model="courseNo" />
-            <label
-              class="form-label"
-              style="white-space: nowrap; font-weight: bold"
-              >课程号:</label
-            >
-          </div>
-          <div class="d-flex me-3">
-            <button
-              type="button"
-              class="btn btn-warning"
-              @click="creditCheck"
-              style="white-space: nowrap; font-weight: bold"
-            >
-              学时检查
-            </button>
-          </div>
           <div class="form-outline mb-1 me-1" style="width: 15%">
             <input type="text" class="form-control" v-model="teacherNo" />
             <label
@@ -66,7 +38,7 @@
             <button
               type="button"
               class="btn btn-info"
-              @click="getCourses"
+              @click="getCourses(false)"
               style="white-space: nowrap; font-weight: bold"
             >
               课程查询
@@ -76,16 +48,32 @@
         <table class="table table-hover text-center table-striped">
           <thead>
             <tr class="fs-7">
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('No')"
+              >
                 课程号
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('name')"
+              >
                 课程名称
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('creditHour')"
+              >
                 学时数
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('type')"
+              >
                 课程性质
               </th>
               <th scope="col" style="white-space: nowrap; font-weight: bold">
@@ -130,7 +118,7 @@
                         type="button"
                         class="dropdown-item text-center"
                         @click="toggleEditTeachModal(teacher)"
-                        style="white-space: nowrap;"
+                        style="white-space: nowrap"
                       >
                         {{ teacher.teacherNo }}
                       </button>
@@ -152,8 +140,10 @@
                 <button
                   type="button"
                   class="btn btn-danger"
-                  @click="handleDeleteCourse(course.No)"
-                  style="white-space: nowrap; font-weight: bold"
+                  data-mdb-toggle="modal"
+                  data-mdb-target="#deleteCourseModal"
+                  style="font-weight: bold; white-space: nowrap"
+                  @click="deleteCourseNo = course.No"
                 >
                   删除
                 </button>
@@ -161,8 +151,15 @@
             </tr>
           </tbody>
         </table>
+
         <nav>
           <ul class="pagination justify-content-center">
+            <li class="page-item">
+              <a class="page-link">Rows per page:</a>
+            </li>
+            <li class="page-item" style="width: 5%">
+              <input type="text" class="form-control" v-model="pageSize" />
+            </li>
             <li class="page-item" :class="{ disabled: currentPage === 1 }">
               <a class="page-link" href="#" @click="goToPage(currentPage - 1)"
                 >Previous</a
@@ -194,7 +191,7 @@
     <!-- add new course modal -->
     <div
       ref="addCourseModal"
-      class="modal fade"
+      class="modal modal-xl fade"
       :class="{ show: activeAddCourseModal, 'd-block': activeAddCourseModal }"
       tabindex="-1"
       role="dialog"
@@ -217,53 +214,139 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form @submit.prevent="submitAddCourseForm">
-              <div class="mb-3">
-                <label class="form-label">课程号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addCourseForm.courseNo"
-                  placeholder="Enter CourseNo"
-                />
+            <form @submit.prevent="addCourse">
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <tbody>
+                    <tr>
+                      <td style="width: 200px">
+                        <label class="form-label" style="font-weight: bold"
+                          >课程号:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addCourseForm.courseNo"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >课程名称:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addCourseForm.name"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >学时数:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addCourseForm.creditHour"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >课程性质:</label
+                        >
+                        <select
+                          class="form-select"
+                          aria-label="Default select example"
+                          v-model="addCourseForm.type"
+                        >
+                          <option value="1">1-本科生课程</option>
+                          <option value="2">2-研究生课程</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div class="mb-3">
-                <label class="form-label">课程名称</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addCourseForm.name"
-                  placeholder="Enter name"
-                />
+              <div class="text-right">
+                <button type="button" class="btn btn-info" @click="addTeacher">
+                  添加主讲教师
+                </button>
               </div>
-              <div class="mb-3">
-                <label class="form-label">学时数</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addCourseForm.creditHour"
-                  placeholder="Enter source"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">课程类型</label>
-                <select
-                  class="form-select"
-                  aria-label="Default select example"
-                  v-model="addCourseForm.type"
-                >
-                  <option value="1">1-本科生课程</option>
-                  <option value="2">2-研究生课程</option>
-                </select>
+              <hr />
+              <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                  <thead>
+                    <tr>
+                      <th>课程号</th>
+                      <th>教师工号</th>
+                      <th>年份</th>
+                      <th>学期</th>
+                      <th>承担学时</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(teacher, index) in addTeachers" :key="index">
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          disabled="true"
+                          v-model="addCourseForm.courseNo"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="teacher.teacherNo"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="teacher.year"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <select
+                          class="form-select"
+                          aria-label="Default select example"
+                          v-model="teacher.semester"
+                        >
+                          <option value="1">1-春季学期</option>
+                          <option value="2">2-夏季学期</option>
+                          <option value="3">3-秋季学期</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="teacher.takeCreditHour"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger"
+                          @click="removeTeacher(index)"
+                        >
+                          <i class="far fa-trash-can"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               <div class="d-flex justify-content-evenly">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                >
-                  提交
-                </button>
+                <button type="submit" class="btn btn-primary">提交</button>
                 <button type="button" class="btn btn-danger" @click="initForm">
                   重置
                 </button>
@@ -273,113 +356,15 @@
         </div>
       </div>
     </div>
-    <div v-if="activeAddCourseModal" class="modal-backdrop fade show"></div>
-
-    <!-- add teacher course modal -->
-    <div
-      ref="addTeachCourseModal"
-      class="modal fade"
-      :class="{
-          show: activeTeachCourseModal,
-          'd-block': activeTeachCourseModal,
-        }"
-      tabindex="-1"
-      role="dialog"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">主讲课程登记</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-              @click="toggleTeachCourseModal"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="alert alert-danger" v-if="showAlert" role="alert">
-            {{ this.message }}
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="submitTeachCourseForm">
-              <div class="mb-3">
-                <label class="form-label">教师工号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="teachCourseForm.teacherNo"
-                  placeholder="Enter TeacherNo"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">课程号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="teachCourseForm.courseNo"
-                  placeholder="Enter CourseNo"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">年份</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="teachCourseForm.year"
-                  placeholder="Enter rank"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">学期</label>
-                <select
-                  class="form-select"
-                  aria-label="Default select example"
-                  v-model="teachCourseForm.semester"
-                >
-                  <option value="1">1-春季学期</option>
-                  <option value="2">2-夏季学期</option>
-                  <option value="3">3-秋季学期</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">承担学时</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="teachCourseForm.takeCreditHour"
-                  placeholder="Enter rank"
-                />
-              </div>
-
-              <div class="d-flex justify-content-evenly">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                >
-                  提交
-                </button>
-                <button type="button" class="btn btn-danger" @click="initForm">
-                  重置
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-if="activeTeachCourseModal" class="modal-backdrop fade show"></div>
 
     <!-- update course modal -->
     <div
       ref="updateCourseModal"
-      class="modal fade"
+      class="modal modal-xl fade"
       :class="{
-          show: activeUpdateCourseModal,
-          'd-block': activeUpdateCourseModal,
-        }"
+        show: activeUpdateCourseModal,
+        'd-block': activeUpdateCourseModal,
+      }"
       tabindex="-1"
       role="dialog"
     >
@@ -401,58 +386,145 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form @submit.prevent="submitUpdateCourseForm">
-              <div class="mb-3">
-                <label class="form-label">课程号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  disabled="true"
-                  v-model="updateCourseForm.No"
-                />
+            <form @submit.prevent="updateCourse(updateCourseForm.No)">
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <tbody>
+                    <tr>
+                      <td style="width: 200px">
+                        <label class="form-label" style="font-weight: bold"
+                          >课程号:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          disabled="true"
+                          v-model="updateCourseForm.No"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >课程名称:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="updateCourseForm.name"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >学时数:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="updateCourseForm.creditHour"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >课程性质:</label
+                        >
+                        <select
+                          class="form-select"
+                          aria-label="Default select example"
+                          v-model="updateCourseForm.type"
+                        >
+                          <option value="1">1-本科生课程</option>
+                          <option value="2">2-研究生课程</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div class="mb-3">
-                <label class="form-label">课程名称</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateCourseForm.name"
-                  placeholder="Enter name"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">学时数</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateCourseForm.creditHour"
-                  placeholder="Enter source"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">课程类型</label>
-                <select
-                  class="form-select"
-                  aria-label="Default select example"
-                  v-model="updateCourseForm.type"
+              <div class="text-right">
+                <button
+                  type="button"
+                  class="btn btn-info"
+                  @click="addUpdateTeacher"
                 >
-                  <option value="1">1-本科生课程</option>
-                  <option value="2">2-研究生课程</option>
-                </select>
+                  添加主讲教师
+                </button>
+              </div>
+              <hr />
+              <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                  <thead>
+                    <tr>
+                      <th>课程号</th>
+                      <th>教师工号</th>
+                      <th>年份</th>
+                      <th>学期</th>
+                      <th>承担学时</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(teacher, index) in updateTeachers" :key="index">
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control"
+                          disabled="true"
+                          v-model="updateCourseForm.No"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="teacher.teacherNo"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="teacher.year"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <select
+                          class="form-select"
+                          aria-label="Default select example"
+                          v-model="teacher.semester"
+                        >
+                          <option value="1">1-春季学期</option>
+                          <option value="2">2-夏季学期</option>
+                          <option value="3">3-秋季学期</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="teacher.takeCreditHour"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger"
+                          @click="removeUpdateTeacher(index)"
+                        >
+                          <i class="far fa-trash-can"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               <div class="d-flex justify-content-evenly">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                >
-                  提交
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-danger"
-                  @click="resetUpdateCourseForm"
-                >
+                <button type="submit" class="btn btn-primary">提交</button>
+                <button type="button" class="btn btn-danger" @click="initForm">
                   重置
                 </button>
               </div>
@@ -461,23 +533,21 @@
         </div>
       </div>
     </div>
-    <div v-if="activeUpdateCourseModal" class="modal-backdrop fade show"></div>
 
-    <!-- add Edit course modal -->
+    <!-- Teacher modal -->
     <div
-      ref="addEditCourseModal"
-      class="modal fade"
+      class="modal modal-lg fade"
       :class="{
-          show: activeEditTeachModal,
-          'd-block': activeEditTeachModal,
-        }"
+        show: activeEditTeachModal,
+        'd-block': activeEditTeachModal,
+      }"
       tabindex="-1"
       role="dialog"
     >
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">主讲课程修改/删除</h5>
+            <h5 class="modal-title">主讲教师查看</h5>
             <button
               type="button"
               class="close"
@@ -488,103 +558,83 @@
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="alert alert-danger" v-if="showAlert" role="alert">
-            {{ this.message }}
-          </div>
           <div class="modal-body">
-            <form @submit.prevent="submitUpdateTeachForm">
-              <div class="mb-3">
-                <label class="form-label">教师工号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  disabled="true"
-                  v-model="updateTeachForm.teacherNo"
-                  placeholder="Enter TeacherNo"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">课程号</label>
-                <input
-                  type="text"
-                  disabled="true"
-                  class="form-control"
-                  v-model="updateTeachForm.courseNo"
-                  placeholder="Enter CourseNo"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">年份</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateTeachForm.year"
-                  placeholder="Enter rank"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">学期</label>
-                <select
-                  class="form-select"
-                  aria-label="Default select example"
-                  v-model="updateTeachForm.semester"
-                >
-                  <option value="1">1-春季学期</option>
-                  <option value="2">2-夏季学期</option>
-                  <option value="3">3-秋季学期</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">承担学时</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateTeachForm.takeCreditHour"
-                  placeholder="Enter rank"
-                />
-              </div>
-
-              <div class="d-flex justify-content-evenly">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                >
-                  提交
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-warning"
-                  @click="resetTeachForm"
-                >
-                  重置
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-danger"
-                  @click="deleteTeach"
-                >
-                  删除
-                </button>
-              </div>
-            </form>
+            <table class="table table-bordered text-center">
+              <thead>
+                <tr>
+                  <th>课程号</th>
+                  <th>教师工号</th>
+                  <th>年份</th>
+                  <th>学期</th>
+                  <th>承担学时</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="text-center align-middle fs-6">
+                  <td>{{ teach.courseNo }}</td>
+                  <td>{{ teach.teacherNo }}</td>
+                  <td>{{ teach.year }}</td>
+                  <td>{{ getSemester(teach.semester) }}</td>
+                  <td>{{ teach.takeCreditHour }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
-    <div v-if="activeEditTeachModal" class="modal-backdrop fade show"></div>
+
+    <!-- delete Modal -->
+    <div
+      class="modal fade"
+      tabindex="-1"
+      id="deleteCourseModal"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">删除确认</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-mdb-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body text-danger text fs-1">确认删除此论文吗？</div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-mdb-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              data-mdb-dismiss="modal"
+              @click="handleDeleteCourse(deleteCourseNo)"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
 import _ from 'lodash'
-import { getCourseType } from '../utils/helpFunc.vue'
+import { getCourseType, getSemester } from '../utils/helpFunc.vue'
 
 export default {
-  data () {
+  data() {
     return {
       activeAddCourseModal: false,
-      activeTeachCourseModal: false,
       activeUpdateCourseModal: false,
       activeEditTeachModal: false,
       addCourseForm: {
@@ -593,20 +643,13 @@ export default {
         creditHour: 0,
         type: 0,
       },
-      teachCourseForm: {
-        teacherNo: '',
-        courseNo: '',
-        year: 0,
-        semester: 0,
-        takeCreditHour: 0,
-      },
       updateCourseForm: {
         No: '',
         name: '',
         creditHour: 0,
         type: 0,
       },
-      updateTeachForm: {
+      teach: {
         teacherNo: '',
         courseNo: '',
         year: 0,
@@ -614,6 +657,8 @@ export default {
         takeCreditHour: 0,
       },
       teachers: [],
+      addTeachers: [],
+      updateTeachers: [],
       courses: [],
       message: '',
       showMessage: false,
@@ -622,131 +667,101 @@ export default {
       pageSize: 5,
       courseNo: '',
       teacherNo: '',
+      deleteCourseNo: '',
+      sortByField: 'No',
+      sortDirection: 'asc',
     }
   },
 
   computed: {
-    totalPages () {
+    sortedCourse() {
+      const field = this.sortByField
+      const direction = this.sortDirection === 'asc' ? 1 : -1
+      return this.courses.slice().sort((a, b) => {
+        const aValue = a[field]
+        const bValue = b[field]
+        if (aValue < bValue) {
+          return -1 * direction
+        }
+        if (aValue > bValue) {
+          return 1 * direction
+        }
+        return 0
+      })
+    },
+
+    totalPages() {
       return Math.ceil(this.courses.length / this.pageSize)
     },
 
-    displayedCourses () {
+    displayedCourses() {
       const startIndex = (this.currentPage - 1) * this.pageSize
       const endIndex = startIndex + this.pageSize
-      return this.courses.slice(startIndex, endIndex)
+      return this.sortedCourse.slice(startIndex, endIndex)
     },
 
-    pages () {
+    pages() {
       const pagesArray = []
       for (let i = 1; i <= this.totalPages; ++i) {
         pagesArray.push(i)
       }
       return pagesArray
     },
-
-    addCourseFormValid () {
-      return (
-        this.addCourseForm.courseNo &&
-        this.addCourseForm.name &&
-        this.addCourseForm.creditHour &&
-        this.addCourseForm.type
-      )
-    },
-
-    teachCourseFormValid () {
-      return (
-        this.teachCourseForm.teacherNo &&
-        this.teachCourseForm.courseNo &&
-        this.teachCourseForm.year &&
-        this.teachCourseForm.semester &&
-        this.teachCourseForm.takeCreditHour
-      )
-    },
-
-    updateCourseFormValid () {
-      return (
-        this.updateCourseForm.name &&
-        this.updateCourseForm.creditHour &&
-        this.updateCourseForm.type
-      )
-    },
-
-    updateTeachFormValid () {
-      return (
-        this.updateTeachForm.year &&
-        this.updateTeachForm.semester &&
-        this.updateTeachForm.takeCreditHour
-      )
-    },
   },
 
   methods: {
-    goToPage (page) {
+    sortBy(field) {
+      if (field === this.sortByField) {
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortByField = field
+        this.sortDirection = 'asc'
+      }
+    },
+
+    addTeacher() {
+      this.addTeachers.push({
+        teacherNo: '',
+        year: 0,
+        semester: 0,
+        takeCreditHour: 0,
+      })
+    },
+
+    addUpdateTeacher() {
+      this.updateTeachers.push({
+        teacherNo: '',
+        year: 0,
+        semester: 0,
+        takeCreditHour: 0,
+      })
+    },
+
+    removeTeacher(index) {
+      this.addTeachers.splice(index, 1)
+    },
+
+    removeUpdateTeacher(index) {
+      this.updateTeachers.splice(index, 1)
+    },
+
+    goToPage(page) {
       // 跳转到指定页
       if (page >= 1 && page <= this.totalPages) {
         this.currentPage = page
       }
     },
 
-    setAlertMessage (message) {
-      this.message = message
-      this.showAlert = true
-    },
-
-    submitAddCourseForm () {
-      if (this.addCourseFormValid) {
-        this.addCourse(this.addCourseForm)
-      } else {
-        this.setAlertMessage('请填写完整的课程信息')
-      }
-    },
-
-    submitTeachCourseForm () {
-      if (this.teachCourseFormValid) {
-        this.teachCourse(this.teachCourseForm, this.teachCourseForm.courseNo)
-      } else {
-        this.setAlertMessage('请填写完整的课程信息')
-      }
-    },
-
-    submitUpdateCourseForm () {
-      if (this.updateCourseFormValid) {
-        this.updateCourse(
-          this.updateCourseForm,
-          this.updateCourseForm.No,
-        )
-      } else {
-        this.setAlertMessage('请填写完整的课程信息')
-      }
-    },
-
-    submitUpdateTeachForm () {
-      if (this.updateTeachFormValid) {
-        this.updateTeach(
-          this.updateTeachForm,
-          this.updateTeachForm.teacherNo,
-          this.updateTeachForm.courseNo,
-        )
-      } else {
-        this.setAlertMessage('请填写完整的课程信息')
-      }
-    },
-
-    initForm () {
+    initForm() {
       // 初始化/重置表单
       this.addCourseForm.courseNo = ''
       this.addCourseForm.name = ''
       this.addCourseForm.creditHour = 0
       this.addCourseForm.type = 0
-      // teacherCourseForm
-      this.teachCourseForm.teacherNo = ''
-      this.teachCourseForm.courseNo = ''
-      this.teachCourseForm.year = 0
-      this.teachCourseForm.semester = 0
-      this.teachCourseForm.takeCreditHour = 0
+      this.addTeachers = []
     },
 
-    manageMessage (status) {
+    manageMessage(status) {
       if (status) {
         this.showMessage = true
         return true
@@ -756,7 +771,7 @@ export default {
       }
     },
 
-    getCourses (flag = false) {
+    getCourses(flag = false) {
       if (this.teacherNo) {
         this.queryCourse(this.teacherNo, flag)
       } else {
@@ -764,7 +779,7 @@ export default {
       }
     },
 
-    queryCourse (teacherNo, flag = false) {
+    queryCourse(teacherNo, flag = false) {
       // 查询论文信息
       const path = `http://localhost:5000/courses/teacher/${teacherNo}`
       axios
@@ -783,7 +798,7 @@ export default {
         })
     },
 
-    getAllCourses (flag = false) {
+    getAllCourses(flag = false) {
       // 获取课程信息
       const path = 'http://localhost:5000/courses'
       axios
@@ -797,13 +812,17 @@ export default {
         })
     },
 
-    addCourse (payload) {
+    addCourse() {
       // 添加课程信息
       const path = 'http://localhost:5000/courses'
+      const payload = {
+        course: this.addCourseForm,
+        teachers: this.addTeachers,
+      }
       axios
         .put(path, payload)
         .then((res) => {
-          this.getCourses(true)
+          this.getCourses(res.data.status)
           this.message = res.data.message
           if (this.manageMessage(res.data.status)) {
             this.initForm()
@@ -816,61 +835,42 @@ export default {
         })
     },
 
-    toggleAddCourseModal () {
+    toggleAddCourseModal() {
+      this.initForm()
       this.activeAddCourseModal = !this.activeAddCourseModal
       if (this.activeAddCourseModal) {
         this.showAlert = false
       }
     },
 
-    getTeachers (courseNo) {
+    getTeachers(courseNo, isUpdate = false) {
       // 获取课程主讲信息
       const path = `http://localhost:5000/courses/${courseNo}`
       axios
         .get(path)
         .then((res) => {
-          this.teachers = res.data.teachers
-          console.log(this.teachers)
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-    },
-
-    teachCourse (payload, courseNo) {
-      // 添加主讲课程信息
-      const path = `http://localhost:5000/courses/${courseNo}`
-      axios
-        .put(path, payload)
-        .then((res) => {
-          this.getCourses(true)
-          this.message = res.data.message
-          if (this.manageMessage(res.data.status)) {
-            this.initForm()
-            this.toggleTeachCourseModal()
+          if (isUpdate) {
+            this.updateTeachers = res.data.teachers
+          } else {
+            this.teachers = res.data.teachers
           }
         })
         .catch((error) => {
           console.error(error)
-          this.getCourses()
         })
-      return false
     },
 
-    toggleTeachCourseModal () {
-      this.activeTeachCourseModal = !this.activeTeachCourseModal
-      if (this.activeTeachCourseModal) {
-        this.showAlert = false
-      }
-    },
-
-    updateCourse (payload, courseNo) {
+    updateCourse(courseNo) {
       // 更新课程信息
       const path = `http://localhost:5000/courses/${courseNo}`
+      const payload = {
+        course: this.updateCourseForm,
+        teachers: this.updateTeachers,
+      }
       axios
         .post(path, payload)
         .then((res) => {
-          this.getCourses(true)
+          this.getCourses(res.data.status)
           this.message = res.data.message
           if (this.manageMessage(res.data.status)) {
             this.toggleUpdateCourseModal(null)
@@ -882,7 +882,8 @@ export default {
         })
     },
 
-    resetUpdateCourseForm () {
+    resetUpdateCourseForm() {
+      this.getTeachers(this.updateCourseForm.No, true)
       for (let i = 0; i < this.displayedCourses.length; ++i) {
         if (this.displayedCourses[i].No === this.updateCourseForm.No) {
           this.updateCourseForm = _.cloneDeep(this.displayedCourses[i])
@@ -891,8 +892,9 @@ export default {
       }
     },
 
-    toggleUpdateCourseModal (course) {
+    toggleUpdateCourseModal(course) {
       if (course) {
+        this.getTeachers(course.No, true)
         this.updateCourseForm = _.cloneDeep(course)
       }
       this.activeUpdateCourseModal = !this.activeUpdateCourseModal
@@ -901,7 +903,7 @@ export default {
       }
     },
 
-    handleDeleteCourse (courseNo) {
+    handleDeleteCourse(courseNo) {
       // 删除课程
       const path = `http://localhost:5000/courses/${courseNo}`
       axios
@@ -917,54 +919,9 @@ export default {
         })
     },
 
-    updateTeach (payload, teacherNo, courseNo) {
-      // 更新课程主讲信息
-      const path = `http://localhost:5000/courses/${courseNo}/${teacherNo}`
-      axios
-        .post(path, payload)
-        .then((res) => {
-          this.getTeachers(courseNo)
-          this.message = res.data.message
-          if (this.manageMessage(res.data.status)) {
-            this.toggleEditTeachModal(null)
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-          this.getTeachers(courseNo)
-        })
-    },
-
-    resetTeachForm () {
-      for (let i = 0; i < this.teachers.length; ++i) {
-        if (teachers[i].teacherNo === this.updateTeachForm.teacherNo) {
-          this.updateTeachForm = _.cloneDeep(this.teachers[i])
-          break
-        }
-      }
-    },
-
-    deleteTeach () {
-      // 删除课程登记
-      const path = `http://localhost:5000/courses/${this.updateTeachForm.courseNo}/${this.updateTeachForm.teacherNo}`
-      axios
-        .delete(path)
-        .then((res) => {
-          this.getTeachers(this.updateTeachForm.courseNo)
-          this.message = res.data.message
-          if (this.manageMessage(res.data.status)) {
-            this.toggleEditTeachModal(null)
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-          this.getTeachers(this.updateTeachForm.courseNo)
-        })
-    },
-
-    toggleEditTeachModal (teacher) {
+    toggleEditTeachModal(teacher) {
       if (teacher) {
-        this.updateTeachForm = _.cloneDeep(teacher)
+        this.teach = _.cloneDeep(teacher)
       }
       this.activeEditTeachModal = !this.activeEditTeachModal
       if (this.activeEditTeachModal) {
@@ -972,32 +929,15 @@ export default {
       }
     },
 
-    creditCheck () {
-      if (this.courseNo) {
-        const path = `http://localhost:5000/courses/check/${this.courseNo}`
-        axios
-          .get(path)
-          .then((res) => {
-            this.message = res.data.message
-            this.showMessage = true
-          })
-          .catch((error) => {
-            console.error(error)
-          })
-      } else {
-        this.message = '检查失败：课程号不能为空'
-        this.showMessage = true
-      }
-    },
-
     getCourseType,
+    getSemester,
   },
 
-  created () {
+  created() {
     this.getCourses()
   },
 
-  mounted () {
+  mounted() {
     document.querySelectorAll('.form-outline').forEach((formOutline) => {
       new mdb.Input(formOutline).update()
     })

@@ -7,9 +7,9 @@
         <div
           class="alert"
           :class="{
-              'alert-danger': message.includes('失败'),
-              'alert-success': !message.includes('失败'),
-            }"
+            'alert-danger': message.includes('失败'),
+            'alert-success': !message.includes('失败'),
+          }"
           role="alert"
           v-if="showMessage"
         >
@@ -26,34 +26,6 @@
               项目登记
             </button>
           </div>
-          <div class="d-flex me-3">
-            <button
-              type="button"
-              class="btn btn-primary text-nowrap"
-              style="white-space: nowrap; font-weight: bold"
-              @click="toggleTakeProjectModal"
-            >
-              承担项目登记
-            </button>
-          </div>
-          <div class="form-outline mb-1 me-1" style="width: 15%">
-            <input type="text" class="form-control" v-model="projectNo" />
-            <label
-              class="form-label"
-              style="white-space: nowrap; font-weight: bold"
-              >项目号:</label
-            >
-          </div>
-          <div class="d-flex me-3">
-            <button
-              type="button"
-              class="btn btn-warning"
-              @click="fundCheck"
-              style="white-space: nowrap; font-weight: bold"
-            >
-              经费检查
-            </button>
-          </div>
           <div class="form-outline mb-1 me-1" style="width: 15%">
             <input type="text" class="form-control" v-model="teacherNo" />
             <label
@@ -66,7 +38,7 @@
             <button
               type="button"
               class="btn btn-info"
-              @click="getProjects"
+              @click="getProjects(false)"
               style="white-space: nowrap; font-weight: bold"
             >
               项目查询
@@ -76,25 +48,54 @@
         <table class="table table-hover text-center table-striped">
           <thead>
             <tr class="fs-6">
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('No')"
+              >
                 项目号
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;项目名称&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('name')"
+              >
+                &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;项目名称&nbsp; &nbsp; &nbsp;
+                &nbsp;&nbsp;
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('source')"
+              >
                 &nbsp;&nbsp;项目来源&nbsp;&nbsp;
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
-                &nbsp;项目类型&nbsp;
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('type')"
+              >
+                项目类型
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('funds')"
+              >
                 项目总经费
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('startYear')"
+              >
                 开始年份
               </th>
-              <th scope="col" style="white-space: nowrap; font-weight: bold">
+              <th
+                scope="col"
+                style="white-space: nowrap; font-weight: bold"
+                @click="sortBy('endYear')"
+              >
                 结束年份
               </th>
               <th scope="col" style="white-space: nowrap; font-weight: bold">
@@ -117,7 +118,9 @@
               <td>{{ project.No }}</td>
               <td>{{ project.name }}</td>
               <td>{{ project.source }}</td>
-              <td>{{ getProjectType(project.type) }}</td>
+              <td style="white-space: nowrap">
+                {{ getProjectType(project.type) }}
+              </td>
               <td>{{ project.funds }}</td>
               <td>{{ project.startYear }}</td>
               <td>{{ project.endYear }}</td>
@@ -163,8 +166,10 @@
                 <button
                   type="button"
                   class="btn btn-danger"
-                  @click="handleDeleteProject(project.No)"
+                  data-mdb-toggle="modal"
+                  data-mdb-target="#deleteProjectModal"
                   style="white-space: nowrap; font-weight: bold"
+                  @click="deleteProjectNo = project.No"
                 >
                   删除
                 </button>
@@ -172,8 +177,15 @@
             </tr>
           </tbody>
         </table>
+
         <nav>
           <ul class="pagination justify-content-center">
+            <li class="page-item">
+              <a class="page-link">Rows per page:</a>
+            </li>
+            <li class="page-item" style="width: 5%">
+              <input type="text" class="form-control" v-model="pageSize" />
+            </li>
             <li class="page-item" :class="{ disabled: currentPage === 1 }">
               <a class="page-link" href="#" @click="goToPage(currentPage - 1)"
                 >Previous</a
@@ -204,8 +216,7 @@
 
     <!-- add new project modal -->
     <div
-      ref="addProjectModal"
-      class="modal fade"
+      class="modal fade modal-xl"
       :class="{ show: activeAddProjectModal, 'd-block': activeAddProjectModal }"
       tabindex="-1"
       role="dialog"
@@ -228,83 +239,165 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form @submit.prevent="submitAddProjectForm">
-              <div class="mb-3">
-                <label class="form-label">项目号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addProjectForm.projectNo"
-                  placeholder="Enter ProjectNo"
-                />
+            <form @submit.prevent="addProject">
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <tbody>
+                    <tr>
+                      <td style="width: 250px">
+                        <label class="form-label" style="font-weight: bold"
+                          >项目号:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addProjectForm.projectNo"
+                          required
+                        />
+                      </td>
+                      <td colspan="2">
+                        <label class="form-label" style="font-weight: bold"
+                          >项目名称:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addProjectForm.name"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >项目来源:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addProjectForm.source"
+                          required
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >项目类型:</label
+                        >
+                        <select
+                          class="form-select"
+                          aria-label="Default select example"
+                          v-model="addProjectForm.type"
+                          required
+                        >
+                          <option value="1">1-国家级项目</option>
+                          <option value="2">2-省部级项目</option>
+                          <option value="3">3-市厅级项目</option>
+                          <option value="4">4-企业合作项目</option>
+                          <option value="5">5-其他类型项目</option>
+                        </select>
+                      </td>
+                      <td>
+                        <label
+                          class="form-label select-label"
+                          style="font-weight: bold"
+                          >项目经费:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addProjectForm.funds"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label">开始年份</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addProjectForm.startYear"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label">结束年份</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="addProjectForm.endYear"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div class="mb-3">
-                <label class="form-label">项目名称</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addProjectForm.name"
-                  placeholder="Enter name"
-                />
+
+              <div class="text-right">
+                <button type="button" class="btn btn-info" @click="addTake">
+                  添加负责人
+                </button>
               </div>
-              <div class="mb-3">
-                <label class="form-label">项目来源</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addProjectForm.source"
-                  placeholder="Enter source"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">项目类型</label>
-                <select
-                  class="form-select"
-                  aria-label="Default select example"
-                  v-model="addProjectForm.type"
-                >
-                  <option value="1">1-国家级项目</option>
-                  <option value="2">2-省部级项目</option>
-                  <option value="3">3-市厅级项目</option>
-                  <option value="4">4-企业合作项目</option>
-                  <option value="5">5-其他类型项目</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">总经费</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addProjectForm.funds"
-                  placeholder="Enter Funds"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">开始年份</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addProjectForm.startYear"
-                  placeholder="Enter source"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">结束年份</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="addProjectForm.endYear"
-                  placeholder="Enter source"
-                />
+              <hr />
+              <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                  <thead>
+                    <tr>
+                      <th>项目号</th>
+                      <th>教师工号</th>
+                      <th>排名</th>
+                      <th>承担经费</th>
+                      <th>删除</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(take, index) in addTakes" :key="index">
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control"
+                          disabled="true"
+                          v-model="addProjectForm.projectNo"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="take.teacherNo"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control"
+                          v-model="take.rank"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="take.takeFunds"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger"
+                          @click="removeTake(index)"
+                        >
+                          <i class="far fa-trash-can"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               <div class="d-flex justify-content-evenly">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                >
-                  提交
-                </button>
+                <button type="submit" class="btn btn-primary">提交</button>
                 <button type="button" class="btn btn-danger" @click="initForm">
                   重置
                 </button>
@@ -314,100 +407,15 @@
         </div>
       </div>
     </div>
-    <div v-if="activeAddProjectModal" class="modal-backdrop fade show"></div>
-
-    <!-- add take project modal -->
-    <div
-      ref="addTakeProjectModal"
-      class="modal fade"
-      :class="{
-          show: activeTakeProjectModal,
-          'd-block': activeTakeProjectModal,
-        }"
-      tabindex="-1"
-      role="dialog"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">承担项目登记</h5>
-            <button
-              type="button"
-              class="close"
-              data-dismiss="modal"
-              aria-label="Close"
-              @click="toggleTakeProjectModal"
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="alert alert-danger" v-if="showAlert" role="alert">
-            {{ this.message }}
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="submitTakeProjectForm">
-              <div class="mb-3">
-                <label class="form-label">教师工号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="takeProjectForm.teacherNo"
-                  placeholder="Enter TeacherNo"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">项目号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="takeProjectForm.projectNo"
-                  placeholder="Enter ProjectNo"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">排名</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="takeProjectForm.rank"
-                  placeholder="Enter rank"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">承担经费</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="takeProjectForm.takeFunds"
-                  placeholder="Enter rank"
-                />
-              </div>
-              <div class="d-flex justify-content-evenly">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                >
-                  提交
-                </button>
-                <button type="button" class="btn btn-danger" @click="initForm">
-                  重置
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-if="activeTakeProjectModal" class="modal-backdrop fade show"></div>
 
     <!-- update project modal -->
     <div
       ref="updateProjectModal"
-      class="modal fade"
+      class="modal fade modal-xl"
       :class="{
-          show: activeUpdateProjectModal,
-          'd-block': activeUpdateProjectModal,
-        }"
+        show: activeUpdateProjectModal,
+        'd-block': activeUpdateProjectModal,
+      }"
       tabindex="-1"
       role="dialog"
     >
@@ -429,87 +437,171 @@
             {{ this.message }}
           </div>
           <div class="modal-body">
-            <form @submit.prevent="submitUpdateProjectForm">
-              <div class="mb-3">
-                <label class="form-label">项目号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  disabled="true"
-                  v-model="updateProjectForm.No"
-                />
+            <form @submit.prevent="updateProject(updateProjectForm.No)">
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <tbody>
+                    <tr>
+                      <td style="width: 250px">
+                        <label class="form-label" style="font-weight: bold"
+                          >项目号:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          disabled="true"
+                          v-model="updateProjectForm.No"
+                          required
+                        />
+                      </td>
+                      <td colspan="2">
+                        <label class="form-label" style="font-weight: bold"
+                          >项目名称:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="updateProjectForm.name"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >项目来源:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="updateProjectForm.source"
+                          required
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <label class="form-label" style="font-weight: bold"
+                          >项目类型:</label
+                        >
+                        <select
+                          class="form-select"
+                          aria-label="Default select example"
+                          v-model="updateProjectForm.type"
+                          required
+                        >
+                          <option value="1">1-国家级项目</option>
+                          <option value="2">2-省部级项目</option>
+                          <option value="3">3-市厅级项目</option>
+                          <option value="4">4-企业合作项目</option>
+                          <option value="5">5-其他类型项目</option>
+                        </select>
+                      </td>
+                      <td>
+                        <label
+                          class="form-label select-label"
+                          style="font-weight: bold"
+                          >项目经费:</label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="updateProjectForm.funds"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label">开始年份</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="updateProjectForm.startYear"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <label class="form-label">结束年份</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="updateProjectForm.endYear"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div class="mb-3">
-                <label class="form-label">项目名称</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateProjectForm.name"
-                  placeholder="Enter name"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">项目来源</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateProjectForm.source"
-                  placeholder="Enter source"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">项目类型</label>
-                <select
-                  class="form-select"
-                  aria-label="Default select example"
-                  v-model="updateProjectForm.type"
-                >
-                  <option value="1">1-国家级项目</option>
-                  <option value="2">2-省部级项目</option>
-                  <option value="3">3-市厅级项目</option>
-                  <option value="4">4-企业合作项目</option>
-                  <option value="5">5-其他类型项目</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">总经费</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateProjectForm.funds"
-                  placeholder="Enter Funds"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">开始年份</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateProjectForm.startYear"
-                  placeholder="Enter source"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">结束年份</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateProjectForm.endYear"
-                  placeholder="Enter source"
-                />
-              </div>
-              <div class="d-flex justify-content-evenly">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                >
-                  提交
-                </button>
+
+              <div class="text-right">
                 <button
                   type="button"
-                  class="btn btn-danger"
-                  @click="resetUpdateProjectForm"
+                  class="btn btn-info"
+                  @click="addUpdateTake"
                 >
+                  添加负责人
+                </button>
+              </div>
+              <hr />
+              <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                  <thead>
+                    <tr>
+                      <th>项目号</th>
+                      <th>教师工号</th>
+                      <th>排名</th>
+                      <th>承担经费</th>
+                      <th>删除</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(take, index) in updateTakes" :key="index">
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control"
+                          disabled="true"
+                          v-model="updateProjectForm.No"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="take.teacherNo"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          class="form-control"
+                          v-model="take.rank"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="form-control"
+                          v-model="take.takeFunds"
+                          required
+                        />
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn btn-outline-danger"
+                          @click="removeUpdateTake(index)"
+                        >
+                          <i class="far fa-trash-can"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="d-flex justify-content-evenly">
+                <button type="submit" class="btn btn-primary">提交</button>
+                <button type="button" class="btn btn-danger" @click="initForm">
                   重置
                 </button>
               </div>
@@ -518,23 +610,21 @@
         </div>
       </div>
     </div>
-    <div v-if="activeUpdateProjectModal" class="modal-backdrop fade show"></div>
 
-    <!-- add Edit project modal -->
+    <!-- Take modal -->
     <div
-      ref="addEditProjectModal"
-      class="modal fade"
+      class="modal modal fade"
       :class="{
-          show: activeEditTakeModal,
-          'd-block': activeEditTakeModal,
-        }"
+        show: activeEditTakeModal,
+        'd-block': activeEditTakeModal,
+      }"
       tabindex="-1"
       role="dialog"
     >
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">承担项目修改/删除</h5>
+            <h5 class="modal-title">负责人查看</h5>
             <button
               type="button"
               class="close"
@@ -545,77 +635,69 @@
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="alert alert-danger" v-if="showAlert" role="alert">
-            {{ this.message }}
-          </div>
           <div class="modal-body">
-            <form @submit.prevent="submitUpdateTakeForm">
-              <div class="mb-3">
-                <label class="form-label">教师工号</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  disabled="true"
-                  v-model="updateTakeForm.teacherNo"
-                  placeholder="Enter TeacherNo"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">项目号</label>
-                <input
-                  type="text"
-                  disabled="true"
-                  class="form-control"
-                  v-model="updateTakeForm.projectNo"
-                  placeholder="Enter ProjectNo"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">排名</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateTakeForm.rank"
-                  placeholder="Enter rank"
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">承担经费</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="updateTakeForm.takeFunds"
-                  placeholder="Enter rank"
-                />
-              </div>
-              <div class="d-flex justify-content-evenly">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                >
-                  提交
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-warning"
-                  @click="resetTakeForm"
-                >
-                  重置
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-danger"
-                  @click="deleteTake"
-                >
-                  删除
-                </button>
-              </div>
-            </form>
+            <table class="table table-bordered text-center">
+              <thead>
+                <tr>
+                  <th>项目号</th>
+                  <th>教师工号</th>
+                  <th>排名</th>
+                  <th>承担经费</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="text-center align-middle fs-6">
+                  <td>{{ take.projectNo }}</td>
+                  <td>{{ take.teacherNo }}</td>
+                  <td>{{ take.rank }}</td>
+                  <td>{{ take.takeFunds }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
-    <div v-if="activeEditTakeModal" class="modal-backdrop fade show"></div>
+
+    <!-- delete Modal -->
+    <div
+      class="modal fade"
+      tabindex="-1"
+      id="deleteProjectModal"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">删除确认</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-mdb-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body text-danger text fs-1">确认删除此项目吗？</div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-mdb-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              data-mdb-dismiss="modal"
+              @click="handleDeleteProject(deleteProjectNo)"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -625,12 +707,12 @@ import _ from 'lodash'
 import { getProjectType } from '../utils/helpFunc.vue'
 
 export default {
-  data () {
+  data() {
     return {
       activeAddProjectModal: false,
-      activeTakeProjectModal: false,
       activeUpdateProjectModal: false,
       activeEditTakeModal: false,
+      activedeleteProjectModal: false,
       addProjectForm: {
         projectNo: '',
         name: '',
@@ -639,12 +721,6 @@ export default {
         funds: 0.0,
         startYear: 0,
         endYear: 0,
-      },
-      takeProjectForm: {
-        teacherNo: '',
-        projectNo: '',
-        rank: 0,
-        takeFunds: 0.0,
       },
       updateProjectForm: {
         No: '',
@@ -655,136 +731,106 @@ export default {
         startYear: 0,
         endYear: 0,
       },
-      updateTakeForm: {
-        teacherNo: '',
+      take: {
         projectNo: '',
-        rank: 0,
+        teacherNo: '',
+        rank: '',
         takeFunds: 0.0,
       },
       takes: [],
+      addTakes: [],
+      updateTakes: [],
       projects: [],
       message: '',
       showMessage: false,
       showAlert: false,
       currentPage: 1,
       pageSize: 5,
-      projectNo: '',
       teacherNo: '',
+      deleteProjectNo: '',
+      sortByField: 'No',
+      sortDirection: 'asc',
     }
   },
 
   computed: {
-    totalPages () {
+    sortedProject() {
+      const field = this.sortByField
+      const direction = this.sortDirection === 'asc' ? 1 : -1
+      return this.projects.slice().sort((a, b) => {
+        const aValue = a[field]
+        const bValue = b[field]
+        if (aValue < bValue) {
+          return -1 * direction
+        }
+        if (aValue > bValue) {
+          return 1 * direction
+        }
+        return 0
+      })
+    },
+
+    totalPages() {
       return Math.ceil(this.projects.length / this.pageSize)
     },
 
-    displayedProjects () {
+    displayedProjects() {
       const startIndex = (this.currentPage - 1) * this.pageSize
       const endIndex = startIndex + this.pageSize
-      return this.projects.slice(startIndex, endIndex)
+      return this.sortedProject.slice(startIndex, endIndex)
     },
 
-    pages () {
+    pages() {
       const pagesArray = []
       for (let i = 1; i <= this.totalPages; ++i) {
         pagesArray.push(i)
       }
       return pagesArray
     },
-
-    addProjectFormValid () {
-      return (
-        this.addProjectForm.projectNo &&
-        this.addProjectForm.name &&
-        this.addProjectForm.source &&
-        this.addProjectForm.type &&
-        this.addProjectForm.funds &&
-        this.addProjectForm.startYear &&
-        this.addProjectForm.endYear
-      )
-    },
-
-    takeProjectFormValid () {
-      return (
-        this.takeProjectForm.teacherNo &&
-        this.takeProjectForm.projectNo &&
-        this.takeProjectForm.rank &&
-        this.takeProjectForm.takeFunds
-      )
-    },
-
-    updateProjectFormValid () {
-      return (
-        this.updateProjectForm.name &&
-        this.updateProjectForm.source &&
-        this.updateProjectForm.type &&
-        this.updateProjectForm.funds &&
-        this.updateProjectForm.startYear &&
-        this.updateProjectForm.endYear
-      )
-    },
-
-    updateTakeFormValid () {
-      return (
-        this.updateTakeForm.rank &&
-        this.updateTakeForm.takeFunds
-      )
-    },
   },
 
   methods: {
-    goToPage (page) {
+    sortBy(field) {
+      if (field === this.sortByField) {
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortByField = field
+        this.sortDirection = 'asc'
+      }
+    },
+
+    addTake() {
+      this.addTakes.push({
+        teacherNo: '',
+        rank: '',
+        takeFunds: 0.0,
+      })
+    },
+
+    addUpdateTake() {
+      this.updateTakes.push({
+        teacherNo: '',
+        rank: '',
+        takeFunds: 0.0,
+      })
+    },
+
+    removeTake(index) {
+      this.addTakes.splice(index, 1)
+    },
+
+    removeUpdateTake(index) {
+      this.updateTakes.splice(index, 1)
+    },
+
+    goToPage(page) {
       // 跳转到指定页
       if (page >= 1 && page <= this.totalPages) {
         this.currentPage = page
       }
     },
 
-    setAlertMessage (message) {
-      this.message = message
-      this.showAlert = true
-    },
-
-    submitAddProjectForm () {
-      if (this.addProjectFormValid) {
-        this.addProject(this.addProjectForm)
-      } else {
-        this.setAlertMessage('请填写完整的项目信息')
-      }
-    },
-
-    submitTakeProjectForm () {
-      if (this.takeProjectFormValid) {
-        this.takeProject(this.takeProjectForm, this.takeProjectForm.projectNo)
-      } else {
-        this.setAlertMessage('请填写完整的承担项目信息')
-      }
-    },
-
-    submitUpdateProjectForm () {
-      if (this.updateProjectFormValid) {
-        this.updateProject(
-          this.updateProjectForm,
-          this.updateProjectForm.No
-        )
-      } else {
-        this.setAlertMessage('请填写完整的项目信息')
-      }
-    },
-
-    submitUpdateTakeForm () {
-      if (this.updateTakeFormValid) {
-        this.updateTake(
-          this.updateTakeForm,
-          this.updateTakeForm.teacherNo,
-          this.updateTakeForm.projectNo
-        )
-      } else {
-        this.setAlertMessage('请填写完整的承担项目信息')
-      }
-    },
-
-    initForm () {
+    initForm() {
       // 初始化/重置表单
       this.addProjectForm.projectNo = ''
       this.addProjectForm.name = ''
@@ -794,13 +840,10 @@ export default {
       this.addProjectForm.startYear = 0
       this.addProjectForm.endYear = 0
       // takeProjectForm
-      this.takeProjectForm.teacherNo = ''
-      this.takeProjectForm.projectNo = ''
-      this.takeProjectForm.rank = 0
-      this.takeProjectForm.takeFunds = 0.0
+      this.addTakes = []
     },
 
-    manageMessage (status) {
+    manageMessage(status) {
       if (status) {
         this.showMessage = true
         return true
@@ -810,7 +853,7 @@ export default {
       }
     },
 
-    getProjects (flag = false) {
+    getProjects(flag = false) {
       if (this.teacherNo) {
         this.queryProject(this.teacherNo, flag)
       } else {
@@ -818,7 +861,7 @@ export default {
       }
     },
 
-    queryProject (teacherNo, flag = false) {
+    queryProject(teacherNo, flag = false) {
       // 查询论文信息
       const path = `http://localhost:5000/projects/teacher/${teacherNo}`
       axios
@@ -837,7 +880,7 @@ export default {
         })
     },
 
-    getAllProjects (flag = false) {
+    getAllProjects(flag = false) {
       // 获取项目信息
       const path = 'http://localhost:5000/projects'
       axios
@@ -851,13 +894,17 @@ export default {
         })
     },
 
-    addProject (payload) {
-      // 添加项目信息
+    addProject() {
       const path = 'http://localhost:5000/projects'
+      const payload = {
+        project: this.addProjectForm,
+        takes: this.addTakes,
+      }
+      // 添加项目信息
       axios
         .put(path, payload)
         .then((res) => {
-          this.getProjects(true)
+          this.getProjects(res.data.status)
           this.message = res.data.message
           if (this.manageMessage(res.data.status)) {
             this.initForm()
@@ -870,60 +917,42 @@ export default {
         })
     },
 
-    toggleAddProjectModal () {
+    toggleAddProjectModal() {
+      this.initForm()
       this.activeAddProjectModal = !this.activeAddProjectModal
       if (this.activeAddProjectModal) {
         this.showAlert = false
       }
     },
 
-    getTakes (projectNo) {
+    getTakes(projectNo, isUpdate = false) {
       // 获取项目承担信息
       const path = `http://localhost:5000/projects/${projectNo}`
       axios
         .get(path)
         .then((res) => {
-          this.takes = res.data.takes
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-    },
-
-    takeProject (payload, projectNo) {
-      // 添加承担项目信息
-      const path = `http://localhost:5000/projects/${projectNo}`
-      axios
-        .put(path, payload)
-        .then((res) => {
-          this.getProjects(true)
-          this.message = res.data.message
-          if (this.manageMessage(res.data.status)) {
-            this.initForm()
-            this.toggleTakeProjectModal()
+          if (isUpdate) {
+            this.updateTakes = res.data.takes
+          } else {
+            this.takes = res.data.takes
           }
         })
         .catch((error) => {
           console.error(error)
-          this.getProjects()
         })
-      return false
     },
 
-    toggleTakeProjectModal () {
-      this.activeTakeProjectModal = !this.activeTakeProjectModal
-      if (this.activeTakeProjectModal) {
-        this.showAlert = false
-      }
-    },
-
-    updateProject (payload, projectNo) {
+    updateProject(projectNo) {
       // 更新项目信息
       const path = `http://localhost:5000/projects/${projectNo}`
+      const payload = {
+        project: this.updateProjectForm,
+        takes: this.updateTakes,
+      }
       axios
         .post(path, payload)
         .then((res) => {
-          this.getProjects(true)
+          this.getProjects(res.data.status)
           this.message = res.data.message
           if (this.manageMessage(res.data.status)) {
             this.toggleUpdateProjectModal(null)
@@ -935,7 +964,8 @@ export default {
         })
     },
 
-    resetUpdateProjectForm () {
+    resetUpdateProjectForm() {
+      this.getTakes(this.updateProjectForm.No, true)
       for (let i = 0; i < this.displayedProjects.length; ++i) {
         if (this.displayedProjects[i].No === this.updateProjectForm.No) {
           this.updateProjectForm = _.cloneDeep(this.displayedProjects[i])
@@ -944,8 +974,9 @@ export default {
       }
     },
 
-    toggleUpdateProjectModal (project) {
+    toggleUpdateProjectModal(project) {
       if (project) {
+        this.getTakes(project.No, true)
         this.updateProjectForm = _.cloneDeep(project)
       }
       this.activeUpdateProjectModal = !this.activeUpdateProjectModal
@@ -954,7 +985,7 @@ export default {
       }
     },
 
-    handleDeleteProject (projectNo) {
+    handleDeleteProject(projectNo) {
       // 删除项目
       const path = `http://localhost:5000/projects/${projectNo}`
       axios
@@ -970,54 +1001,9 @@ export default {
         })
     },
 
-    updateTake (payload, teacherNo, projectNo) {
-      // 更新项目承担信息
-      const path = `http://localhost:5000/projects/${projectNo}/${teacherNo}`
-      axios
-        .post(path, payload)
-        .then((res) => {
-          this.getTakes(projectNo)
-          this.message = res.data.message
-          if (this.manageMessage(res.data.status)) {
-            this.toggleEditTakeModal(null)
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-          this.getTakes(projectNo)
-        })
-    },
-
-    resetTakeForm () {
-      for (let i = 0; i < this.takes.length; ++i) {
-        if (takes[i].teacherNo === this.updateTakeForm.teacherNo) {
-          this.updateTakeForm = _.cloneDeep(this.takes[i])
-          break
-        }
-      }
-    },
-
-    deleteTake () {
-      // 删除项目登记
-      const path = `http://localhost:5000/projects/${this.updateTakeForm.projectNo}/${this.updateTakeForm.teacherNo}`
-      axios
-        .delete(path)
-        .then((res) => {
-          this.getTakes(this.updateTakeForm.projectNo)
-          this.message = res.data.message
-          if (this.manageMessage(res.data.status)) {
-            this.toggleEditTakeModal(null)
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-          this.getTakes(this.updateTakeForm.projectNo)
-        })
-    },
-
-    toggleEditTakeModal (take) {
+    toggleEditTakeModal(take) {
       if (take) {
-        this.updateTakeForm = _.cloneDeep(take)
+        this.take = _.cloneDeep(take)
       }
       this.activeEditTakeModal = !this.activeEditTakeModal
       if (this.activeEditTakeModal) {
@@ -1025,33 +1011,14 @@ export default {
       }
     },
 
-    fundCheck () {
-      // 经费检查
-      if (this.projectNo) {
-        const path = `http://localhost:5000/projects/check/${this.projectNo}`
-        axios
-          .get(path)
-          .then((res) => {
-            this.message = res.data.message
-            this.showMessage = true
-          })
-          .catch((error) => {
-            console.error(error)
-          })
-      } else {
-        this.message = '检查失败：项目号不能为空！'
-        this.showMessage = true
-      }
-    },
-
     getProjectType,
   },
 
-  created () {
+  created() {
     this.getProjects()
   },
 
-  mounted () {
+  mounted() {
     document.querySelectorAll('.form-outline').forEach((formOutline) => {
       new mdb.Input(formOutline).update()
     })

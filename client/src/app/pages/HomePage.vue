@@ -188,10 +188,11 @@ import Paper from './Paper.vue'
 import Project from './Project.vue'
 import Course from './Course.vue'
 import Query from './Query.vue'
+// import Test from './Test.vue'
 </script>
 
 <style>
 .mar {
-    margin: 10px;
+  margin: 10px;
 }
 </style>
