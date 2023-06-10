@@ -1,46 +1,14 @@
 from flask import Blueprint, jsonify, request, Response, send_file, make_response
 import pdfkit
-import base64
+import openpyxl
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-import json
-from reportlab.pdfgen import canvas
 from utils import *
 from db import *
+from utils import *
 
 query_blueprint = Blueprint("query", __name__)
-
-genderMap = {1: "男", 2: "女"}
-
-titleMap = {
-    1: "博士后",
-    2: "助教",
-    3: "讲师",
-    4: "副教授",
-    5: "特任教授",
-    6: "教授",
-    7: "助理研究员",
-    8: "特任副研究员",
-    9: "副研究员",
-    10: "特任研究员",
-    11: "研究员",
-}
-
-paperTypeMap = {1: "full paper", 2: "short paper", 3: "poster paper", 4: "demo paper"}
-
-paperLevelMap = {
-    1: "CCF-A",
-    2: "CCF-B",
-    3: "CCF-C",
-    4: "中文 CCF-A",
-    5: "中文 CCF-B",
-    6: "无级别",
-}
-
-projectMap = {1: "国家级项目", 2: "省部级项目", 3: "市厅级项目", 4: "企业合作项目", 5: "其它类型项目"}
-
-coAuthorMap = {False: "否", True: "是"}
-
-semesterMap = {1: "春", 2: "夏", 3: "秋"}
 
 
 def getCourse(teacherNo, startYear, endYear):
@@ -264,6 +232,7 @@ def generatePDF(teacherNo, startYear, endYear):
     <table>
         <tr>
             <th style="white-space: nowrap">项目名称</th>
+            <th style="white-space: nowrap">项目来源</th>
             <th style="white-space: nowrap">项目级别</th>
             <th style="white-space: nowrap">起止年份</th>
             <th style="white-space: nowrap">总经费</th>
@@ -274,6 +243,7 @@ def generatePDF(teacherNo, startYear, endYear):
     for row in projects:
         html += "<tr>"
         html += "<td>" + row["name"] + "</td>"
+        html += "<td>" + row["source"] + "</td>"
         html += "<td>" + projectMap[row["type"]] + "</td>"
         html += "<td>" + str(row["startYear"]) + "-" + str(row["endYear"]) + "</td>"
         html += "<td>" + str(row["funds"]) + "</td>"
@@ -308,4 +278,183 @@ def export_pdf(teacherNo, startYear, endYear):
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = "attachment; filename=output.pdf"
 
+    return response
+
+
+def generate_xlsx(teacherNo, startYear, endYear):
+    teacher, courses, papers, projects = query(
+        teacherNo, startYear, endYear, local=True
+    )
+    workbook = openpyxl.Workbook()
+
+    # sheet1
+    sheet1 = workbook.active
+    sheet1.title = "教师"
+    sheet1.append(["工号", "姓名", "性别", "职称"])
+    sheet1.append(
+        [
+            teacher["No"],
+            teacher["name"],
+            genderMap[teacher["gender"]],
+            titleMap[teacher["title"]],
+        ]
+    )
+
+    # sheet2
+    sheet2 = workbook.create_sheet(title="主讲课程")
+    sheet2.append(["课程号", "课程名", "年份", "学期", "主讲学时"])
+    for row in courses:
+        sheet2.append(
+            [
+                row["No"],
+                row["name"],
+                row["year"],
+                semesterMap[row["semester"]],
+                row["takeCreditHour"],
+            ]
+        )
+
+    # sheet3
+    sheet3 = workbook.create_sheet(title="发表论文")
+    sheet3.append(["论文序号", "论文名", "发表源", "发表年份", "类型", "级别", "排名", "是否通讯作者"])
+    for row in papers:
+        sheet3.append(
+            [
+                row["No"],
+                row["name"],
+                row["source"],
+                row["year"],
+                paperTypeMap[row["type"]],
+                paperLevelMap[row["level"]],
+                row["rank"],
+                coAuthorMap[row["isCoAuthor"]],
+            ]
+        )
+
+    # sheet4
+    sheet4 = workbook.create_sheet(title="承担项目")
+    sheet4.append(["项目号", "项目名称", "项目来源", "项目类型", "开始年份", "结束年份", "项目总经费", "承担经费"])
+    for row in projects:
+        sheet4.append(
+            [
+                row["No"],
+                row["name"],
+                row["source"],
+                projectMap[row["type"]],
+                row["startYear"],
+                row["endYear"],
+                row["funds"],
+                row["takeFunds"],
+            ]
+        )
+
+    # save
+    workbook.save("output.xlsx")
+
+
+@query_blueprint.route(
+    "/export/xlsx/<teacherNo>/<startYear>/<endYear>", methods=["GET"]
+)
+def export_xlsx(teacherNo, startYear, endYear):
+    generate_xlsx(teacherNo, startYear, endYear)
+
+    with open("output.xlsx", "rb") as f:
+        data = f.read()
+
+    response = make_response(data)
+    response.headers["Content-Disposition"] = "attachment; filename=output.xlsx"
+    response.mimetype = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    return response
+
+
+def generate_docx(teacherNo, startYear, endYear):
+    teacher, courses, papers, projects = query(
+        teacherNo, startYear, endYear, local=True
+    )
+
+    document = Document()
+    title = document.add_heading(
+        "教师教学科研工作统计（" + str(startYear) + "-" + str(endYear) + "）", level=1
+    )
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    document.add_heading("教师信息", level=2)
+    k = 10
+    text = ""
+    text += "工号：" + teacher["No"] + " " * k
+    text += "姓名：" + teacher["name"] + " " * k
+    text += "性别：" + genderMap[teacher["gender"]] + " " * k
+    text += "职称：" + titleMap[teacher["title"]] + "\n"
+    document.add_paragraph(text)
+
+    document.add_heading("教学情况", level=2)
+    table = document.add_table(rows=1, cols=4, style="Table Grid")
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = "课程号"
+    hdr_cells[1].text = "课程名"
+    hdr_cells[2].text = "主讲学时"
+    hdr_cells[3].text = "学期"
+    for row in courses:
+        row_cells = table.add_row().cells
+        row_cells[0].text = row["No"]
+        row_cells[1].text = row["name"]
+        row_cells[2].text = str(row["takeCreditHour"])
+        row_cells[3].text = str(row["year"]) + semesterMap[row["semester"]]
+
+    document.add_heading("发表论文情况", level=2)
+    table = document.add_table(rows=1, cols=7, style="Table Grid")
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = "论文标题"
+    hdr_cells[1].text = "发表源"
+    hdr_cells[2].text = "发表年份"
+    hdr_cells[3].text = "类型"
+    hdr_cells[4].text = "级别"
+    hdr_cells[5].text = "排名"
+    hdr_cells[6].text = "通讯作者"
+    for row in papers:
+        row_cells = table.add_row().cells
+        row_cells[0].text = row["name"]
+        row_cells[1].text = row["source"]
+        row_cells[2].text = str(row["year"])
+        row_cells[3].text = paperTypeMap[row["type"]]
+        row_cells[4].text = paperLevelMap[row["level"]]
+        row_cells[5].text = str(row["rank"])
+        row_cells[6].text = coAuthorMap[row["isCoAuthor"]]
+
+    document.add_heading("承担项目情况", level=2)
+    table = document.add_table(rows=1, cols=6, style="Table Grid")
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = "项目名称"
+    hdr_cells[1].text = "项目来源"
+    hdr_cells[2].text = "项目类型"
+    hdr_cells[3].text = "起止年份"
+    hdr_cells[4].text = "总经费"
+    hdr_cells[5].text = "承担经费"
+    for row in projects:
+        row_cells = table.add_row().cells
+        row_cells[0].text = row["name"]
+        row_cells[1].text = row["source"]
+        row_cells[2].text = projectMap[row["type"]]
+        row_cells[3].text = str(row["startYear"]) + "-" + str(row["endYear"])
+        row_cells[4].text = str(row["funds"])
+        row_cells[5].text = str(row["takeFunds"])
+
+    document.save("output.docx")
+
+
+@query_blueprint.route(
+    "/export/docx/<teacherNo>/<startYear>/<endYear>", methods=["GET"]
+)
+def export_docx(teacherNo, startYear, endYear):
+    generate_docx(teacherNo, startYear, endYear)
+    with open("output.docx", "rb") as f:
+        data = f.read()
+
+    response = make_response(data)
+    response.headers["Content-Disposition"] = "attachment; filename=output.docx"
+    response.mimetype = (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
     return response

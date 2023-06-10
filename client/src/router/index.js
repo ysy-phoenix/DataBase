@@ -13,16 +13,6 @@ const router = createRouter({
       name: 'login',
       component: () => import('/@/app/pages/Login.vue'),
     },
-    {
-      path: '/ping',
-      name: 'ping',
-      component: () => import('/@/app/pages/Ping.vue'),
-    },
-    {
-      path: '/books',
-      name: 'Books',
-      component: () => import('/@/app/pages/Books.vue'),
-    },
   ],
 })
 

@@ -10,6 +10,7 @@ from paper import *
 from project import *
 from course import *
 from query import *
+from teachers import *
 
 # create the app
 app = Flask(__name__)
@@ -22,6 +23,7 @@ app.register_blueprint(paper_blueprint)
 app.register_blueprint(project_blueprint)
 app.register_blueprint(course_blueprint)
 app.register_blueprint(query_blueprint)
+app.register_blueprint(teacher_blueprint)
 db.init_app(app)
 
 # enable CORS

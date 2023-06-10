@@ -7,9 +7,9 @@
         <div
           class="alert"
           :class="{
-              'alert-danger': message.includes('失败'),
-              'alert-success': !message.includes('失败'),
-            }"
+            'alert-danger': message.includes('失败'),
+            'alert-success': !message.includes('失败'),
+          }"
           role="alert"
           v-if="showMessage"
         >
@@ -51,7 +51,7 @@
               查询
             </button>
           </div>
-          <div class="d-flex">
+          <div class="d-flex me-3">
             <button
               type="button"
               class="btn btn-danger"
@@ -59,6 +59,26 @@
               style="white-space: nowrap; font-weight: bold"
             >
               导出 pdf
+            </button>
+          </div>
+          <div class="d-flex me-3">
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="export_docx"
+              style="white-space: nowrap; font-weight: bold"
+            >
+              导出 docx
+            </button>
+          </div>
+          <div class="d-flex">
+            <button
+              type="button"
+              class="btn btn-info"
+              @click="export_xlsx"
+              style="white-space: nowrap; font-weight: bold"
+            >
+              导出 xlsx
             </button>
           </div>
         </div>
@@ -346,7 +366,7 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
 export default {
-  data () {
+  data() {
     return {
       teacher: {
         No: '',
@@ -362,7 +382,7 @@ export default {
       currentCoursePage: 1,
       currentPaperPage: 1,
       currentProjectPage: 1,
-      pageSize: 5,
+      pageSize: 10,
       teacherNo: '',
       startYear: '',
       endYear: '',
@@ -370,17 +390,17 @@ export default {
   },
 
   computed: {
-    totalCoursePages () {
+    totalCoursePages() {
       return Math.ceil(this.courses.length / this.pageSize)
     },
 
-    displayedCourses () {
+    displayedCourses() {
       const startIndex = (this.currentCoursePage - 1) * this.pageSize
       const endIndex = startIndex + this.pageSize
       return this.courses.slice(startIndex, endIndex)
     },
 
-    coursePages () {
+    coursePages() {
       const pagesArray = []
       for (let i = 1; i <= this.totalCoursePages; ++i) {
         pagesArray.push(i)
@@ -388,17 +408,17 @@ export default {
       return pagesArray
     },
 
-    totalPaperPages () {
+    totalPaperPages() {
       return Math.ceil(this.papers.length / this.pageSize)
     },
 
-    displayedPapers () {
+    displayedPapers() {
       const startIndex = (this.currentPaperPage - 1) * this.pageSize
       const endIndex = startIndex + this.pageSize
       return this.papers.slice(startIndex, endIndex)
     },
 
-    paperPages () {
+    paperPages() {
       const pagesArray = []
       for (let i = 1; i <= this.totalPaperPages; ++i) {
         pagesArray.push(i)
@@ -406,17 +426,17 @@ export default {
       return pagesArray
     },
 
-    totalProjectPages () {
+    totalProjectPages() {
       return Math.ceil(this.projects.length / this.pageSize)
     },
 
-    displayedProjects () {
+    displayedProjects() {
       const startIndex = (this.currentProjectPage - 1) * this.pageSize
       const endIndex = startIndex + this.pageSize
       return this.projects.slice(startIndex, endIndex)
     },
 
-    projectPages () {
+    projectPages() {
       const pagesArray = []
       for (let i = 1; i <= this.totalProjectPages; ++i) {
         pagesArray.push(i)
@@ -426,25 +446,25 @@ export default {
   },
 
   methods: {
-    goToCoursePage (page) {
+    goToCoursePage(page) {
       if (page >= 1 && page <= this.totalCoursePages) {
         this.currentCoursePage = page
       }
     },
 
-    goToPaperPage (page) {
+    goToPaperPage(page) {
       if (page >= 1 && page <= this.totalPaperPages) {
         this.currentPaperPage = page
       }
     },
 
-    goToProjectPage (page) {
+    goToProjectPage(page) {
       if (page >= 1 && page <= this.totalProjectPages) {
         this.currentProjectPage = page
       }
     },
 
-    query () {
+    query() {
       if (this.teacherNo && this.startYear && this.endYear) {
         const path = `http://localhost:5000/query/${this.teacherNo}/${this.startYear}/${this.endYear}`
         axios
@@ -469,7 +489,7 @@ export default {
       }
     },
 
-    export_pdf () {
+    export_pdf() {
       this.query()
       if (this.teacherNo && this.startYear && this.endYear) {
         const path = `http://localhost:5000/export/pdf/${this.teacherNo}/${this.startYear}/${this.endYear}`
@@ -478,8 +498,78 @@ export default {
           .then((res) => {
             this.showMessage = true
             this.message = '导出成功！'
-            const url = window.URL.createObjectURL(res.data);
-            window.open(url, '_blank');
+            const url = window.URL.createObjectURL(res.data)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = 'output.pdf' // 指定文件名
+
+            document.body.appendChild(link)
+            link.click()
+
+            // 清除 URL 对象
+            window.URL.revokeObjectURL(url)
+          })
+          .catch((err) => {
+            console.log('err: ', err)
+            this.showMessage = true
+            this.message = '导出失败：发生错误！'
+          })
+      } else {
+        this.message = '导出失败：请填写完整的查询信息！'
+        this.showMessage = true
+      }
+    },
+
+    export_docx() {
+      this.query()
+      if (this.teacherNo && this.startYear && this.endYear) {
+        const path = `http://localhost:5000/export/docx/${this.teacherNo}/${this.startYear}/${this.endYear}`
+        axios
+          .get(path, { responseType: 'blob' })
+          .then((res) => {
+            this.showMessage = true
+            this.message = '导出成功！'
+            const url = window.URL.createObjectURL(res.data)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = 'output.docx' // 指定文件名
+
+            document.body.appendChild(link)
+            link.click()
+
+            // 清除 URL 对象
+            window.URL.revokeObjectURL(url)
+          })
+          .catch((err) => {
+            console.log('err: ', err)
+            this.showMessage = true
+            this.message = '导出失败：发生错误！'
+          })
+      } else {
+        this.message = '导出失败：请填写完整的查询信息！'
+        this.showMessage = true
+      }
+    },
+
+    export_xlsx() {
+      this.query()
+      if (this.teacherNo && this.startYear && this.endYear) {
+        const path = `http://localhost:5000/export/xlsx/${this.teacherNo}/${this.startYear}/${this.endYear}`
+        axios
+          .get(path, { responseType: 'blob' })
+          .then((res) => {
+            this.showMessage = true
+            this.message = '导出成功！'
+            const url = window.URL.createObjectURL(res.data)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = 'output.xlsx' // 指定文件名
+
+            document.body.appendChild(link)
+            link.click()
+
+            // 清除 URL 对象
+            window.URL.revokeObjectURL(url)
           })
           .catch((err) => {
             console.log('err: ', err)
@@ -500,7 +590,7 @@ export default {
     getProjectType,
   },
 
-  mounted () {
+  mounted() {
     document.querySelectorAll('.form-outline').forEach((formOutline) => {
       new mdb.Input(formOutline).update()
     })

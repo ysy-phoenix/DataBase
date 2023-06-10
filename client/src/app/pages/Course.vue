@@ -113,14 +113,20 @@
                     class="dropdown-menu"
                     aria-labelledby="dropdownMenuButton"
                   >
-                    <li v-for="teacher in teachers" :key="teacher.rank">
+                    <li v-for="teacher in teachers" :key="teacher.teacherNo">
                       <button
                         type="button"
                         class="dropdown-item text-center"
                         @click="toggleEditTeachModal(teacher)"
                         style="white-space: nowrap"
                       >
-                        {{ teacher.teacherNo }}
+                        {{
+                          teacher.year +
+                          ' ' +
+                          getSemester(teacher.semester) +
+                          ' ' +
+                          teacher.teacherNo
+                        }}
                       </button>
                     </li>
                   </ul>
@@ -459,7 +465,7 @@
                       <th>课程号</th>
                       <th>教师工号</th>
                       <th>年份</th>
-                      <th>学期</th>
+                      <th style="width: 20%">学期</th>
                       <th>承担学时</th>
                     </tr>
                   </thead>
@@ -467,7 +473,7 @@
                     <tr v-for="(teacher, index) in updateTeachers" :key="index">
                       <td>
                         <input
-                          type="number"
+                          type="text"
                           class="form-control"
                           disabled="true"
                           v-model="updateCourseForm.No"
@@ -524,7 +530,11 @@
 
               <div class="d-flex justify-content-evenly">
                 <button type="submit" class="btn btn-primary">提交</button>
-                <button type="button" class="btn btn-danger" @click="initForm">
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  @click="resetUpdateCourseForm"
+                >
                   重置
                 </button>
               </div>
@@ -565,7 +575,7 @@
                   <th>课程号</th>
                   <th>教师工号</th>
                   <th>年份</th>
-                  <th>学期</th>
+                  <th style="width: 20%">学期</th>
                   <th>承担学时</th>
                 </tr>
               </thead>
@@ -602,7 +612,7 @@
               aria-label="Close"
             ></button>
           </div>
-          <div class="modal-body text-danger text fs-1">确认删除此论文吗？</div>
+          <div class="modal-body text-danger text fs-1">确认删除此课程吗？</div>
           <div class="modal-footer">
             <button
               type="button"
@@ -664,7 +674,7 @@ export default {
       showMessage: false,
       showAlert: false,
       currentPage: 1,
-      pageSize: 5,
+      pageSize: 10,
       courseNo: '',
       teacherNo: '',
       deleteCourseNo: '',
@@ -851,8 +861,10 @@ export default {
         .then((res) => {
           if (isUpdate) {
             this.updateTeachers = res.data.teachers
+            this.updateTeachers.sort((a, b) => a.year - b.year)
           } else {
             this.teachers = res.data.teachers
+            this.teachers.sort((a, b) => a.year - b.year)
           }
         })
         .catch((error) => {

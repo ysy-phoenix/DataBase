@@ -176,7 +176,7 @@ def edit_project_take(projectNo):
                         teacherNo=take.get("teacherNo"),
                         projectNo=projectNo,
                         rank=take.get("rank"),
-                        isCotake=take.get("isCotake"),
+                        takeFunds=take.get("takeFunds"),
                     )
                 else:
                     update_take = TakeProject.query.filter_by(

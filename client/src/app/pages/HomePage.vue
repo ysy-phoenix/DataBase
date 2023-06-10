@@ -1,13 +1,13 @@
 <template>
   <div class="d-flex flex-column min-vh-100">
     <main class="flex-grow-1">
-      <nav
+      <!-- <nav
         class="navbar navbar-light navbar-expand-lg scp"
         style="background-color: #e3f2fd"
       >
-        <!-- Container wrapper -->
+
         <div class="container-fluid">
-          <!-- Toggle button -->
+
           <button
             class="navbar-toggler"
             type="button"
@@ -20,12 +20,12 @@
             <i class="fas fa-bars"></i>
           </button>
 
-          <!-- Collapsible wrapper -->
+
           <div
             class="collapse navbar-collapse justify-content-center"
             id="navbarCenteredExample"
           >
-            <!-- Left links -->
+
             <ul class="navbar-nav mb-2 mb-lg-0">
               <li class="nav-item">
                 <a class="nav-link active" aria-current="page" href="/">Home</a>
@@ -33,7 +33,7 @@
               <li class="nav-item">
                 <a class="nav-link" href="#">Link</a>
               </li>
-              <!-- Navbar dropdown -->
+
               <li class="nav-item dropdown">
                 <a
                   class="nav-link dropdown-toggle"
@@ -45,7 +45,7 @@
                 >
                   Dropdown
                 </a>
-                <!-- Dropdown menu -->
+
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                   <li>
                     <a class="dropdown-item" href="#">Action</a>
@@ -63,12 +63,12 @@
                 <a class="nav-link disabled">Disabled</a>
               </li>
             </ul>
-            <!-- Left links -->
+
           </div>
-          <!-- Collapsible wrapper -->
+
         </div>
-        <!-- Container wrapper -->
-      </nav>
+
+      </nav> -->
       <div class="mar">
         <!-- Tabs navs -->
         <ul
@@ -79,12 +79,24 @@
           <li class="nav-item" role="presentation">
             <a
               class="nav-link active"
+              id="ex-with-icons-tab-0"
+              data-mdb-toggle="tab"
+              href="#ex-with-icons-tabs-0"
+              role="tab"
+              aria-controls="ex-with-icons-tabs-0"
+              aria-selected="true"
+              ><i class="fas fa-address-book fa-fw me-2"></i>教师查询</a
+            >
+          </li>
+          <li class="nav-item" role="presentation">
+            <a
+              class="nav-link"
               id="ex-with-icons-tab-1"
               data-mdb-toggle="tab"
               href="#ex-with-icons-tabs-1"
               role="tab"
               aria-controls="ex-with-icons-tabs-1"
-              aria-selected="true"
+              aria-selected="false"
               ><i class="fas fa-chart-pie fa-fw me-2"></i>论文登记</a
             >
           </li>
@@ -132,6 +144,14 @@
         <div class="tab-content" id="ex-with-icons-content">
           <div
             class="tab-pane fade show active"
+            id="ex-with-icons-tabs-0"
+            role="tabpanel"
+            aria-labelledby="ex-with-icons-tab-0"
+          >
+            <Teacher />
+          </div>
+          <div
+            class="tab-pane fade show"
             id="ex-with-icons-tabs-1"
             role="tabpanel"
             aria-labelledby="ex-with-icons-tab-1"
@@ -184,6 +204,7 @@
 
 <script setup>
 // import Books from './Books.vue'
+import Teacher from './Teacher.vue'
 import Paper from './Paper.vue'
 import Project from './Project.vue'
 import Course from './Course.vue'

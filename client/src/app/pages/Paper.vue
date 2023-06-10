@@ -737,7 +737,7 @@ export default {
       showMessage: false,
       showAlert: false,
       currentPage: 1,
-      pageSize: 5,
+      pageSize: 10,
       teacherNo: '',
       deletePaperNo: '',
       sortByField: 'No',

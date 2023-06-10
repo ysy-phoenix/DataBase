@@ -352,7 +352,7 @@
                     <tr v-for="(take, index) in addTakes" :key="index">
                       <td>
                         <input
-                          type="number"
+                          type="text"
                           class="form-control"
                           disabled="true"
                           v-model="addProjectForm.projectNo"
@@ -555,7 +555,7 @@
                     <tr v-for="(take, index) in updateTakes" :key="index">
                       <td>
                         <input
-                          type="number"
+                          type="text"
                           class="form-control"
                           disabled="true"
                           v-model="updateProjectForm.No"
@@ -601,7 +601,11 @@
 
               <div class="d-flex justify-content-evenly">
                 <button type="submit" class="btn btn-primary">提交</button>
-                <button type="button" class="btn btn-danger" @click="initForm">
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  @click="resetUpdateProjectForm"
+                >
                   重置
                 </button>
               </div>
@@ -745,7 +749,7 @@ export default {
       showMessage: false,
       showAlert: false,
       currentPage: 1,
-      pageSize: 5,
+      pageSize: 10,
       teacherNo: '',
       deleteProjectNo: '',
       sortByField: 'No',

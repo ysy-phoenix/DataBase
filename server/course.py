@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
 from utils import *
 from db import *
+from collections import defaultdict
+from utils import *
 
 course_blueprint = Blueprint("course", __name__)
 
@@ -28,40 +30,40 @@ def all_courses():
             response["message"] = "必须提供主讲教师信息！"
             return jsonify(response)
 
-        teacherNo = set()
-        years = set()
-        semesters = set()
-        sum = 0
+        teacherNo = defaultdict(set)
+        credits = dict()
+
         for teacher in teachers:
             _teacher = Teacher.query.filter_by(No=teacher["teacherNo"]).first()
             if not _teacher:
                 response["status"] = False
                 response["message"] = "教师 " + teacher["teacherNo"] + " 不存在！"
                 return jsonify(response)
-            if teacher.get("teacherNo") in teacherNo:
+            year, semester = teacher.get("year"), teacher.get("semester")
+            if teacher.get("teacherNo") in teacherNo[(year, semester)]:
                 response["status"] = False
-                response["message"] = "主讲教师 " + teacher["teacherNo"] + " 重复！"
+                response["message"] = (
+                    str(year)
+                    + " "
+                    + semesterMap[int(semester)]
+                    + " 主讲教师 "
+                    + teacher["teacherNo"]
+                    + " 重复！"
+                )
                 return jsonify(response)
-            teacherNo.add(teacher.get("teacherNo"))
-            years.add(teacher.get("year"))
-            if len(years) >= 2:
-                response["status"] = False
-                response["message"] = "年份不一致！"
-                return jsonify(response)
-            semesters.add(teacher.get("semester"))
-            if len(semesters) >= 2:
-                response["status"] = False
-                response["message"] = "学期不一致！"
-                return jsonify(response)
-            sum += int(teacher.get("takeCreditHour"))
+            teacherNo[(year, semester)].add(teacher.get("teacherNo"))
+            if (year, semester) not in credits:
+                credits[(year, semester)] = 0
+            credits[(year, semester)] += int(teacher.get("takeCreditHour"))
 
-        if sum != int(post_course.get("creditHour")):
-            response["status"] = False
-            response["message"] = "学时核算不正确！申报学时为：{}，实际总和为 {}。".format(
-                post_course.get("creditHour"),
-                sum,
-            )
-            return jsonify(response)
+        for credit in credits.values():
+            if credit != int(post_course.get("creditHour")):
+                response["status"] = False
+                response["message"] = "学时核算不正确！申报学时为：{}，实际总和为 {}。".format(
+                    post_course.get("creditHour"),
+                    credit,
+                )
+                return jsonify(response)
 
         # case3 数据类型不符或者约束不满足
         try:
@@ -119,47 +121,48 @@ def edit_course_teacher(courseNo):
             return jsonify(response)
 
         old_teachers = TeachCourse.query.filter_by(courseNo=courseNo).all()
-        delete_teachers = set([teacher.teacherNo for teacher in old_teachers])
-        add_teachers = set()
+        delete_teachers = defaultdict(set)
+        for t in old_teachers:
+            delete_teachers[(t.year, t.semester)].add(t.teacherNo)
+        add_teachers = defaultdict(set)
+        teacherNo = defaultdict(set)
+        credits = dict()
 
-        teacherNo = set()
-        years = set()
-        semesters = set()
-        sum = 0
         for teacher in teachers:
             _teacher = Teacher.query.filter_by(No=teacher["teacherNo"]).first()
             if not _teacher:
                 response["status"] = False
                 response["message"] = "教师 " + teacher["teacherNo"] + " 不存在！"
                 return jsonify(response)
-            if teacher.get("teacherNo") in teacherNo:
+            year, semester = teacher.get("year"), teacher.get("semester")
+            if teacher.get("teacherNo") in teacherNo[(year, semester)]:
                 response["status"] = False
-                response["message"] = "主讲教师 " + teacher["teacherNo"] + " 重复！"
+                response["message"] = (
+                    str(year)
+                    + " "
+                    + semesterMap[int(semester)]
+                    + " 主讲教师 "
+                    + teacher["teacherNo"]
+                    + " 重复！"
+                )
                 return jsonify(response)
-            teacherNo.add(teacher.get("teacherNo"))
-            years.add(teacher.get("year"))
-            if len(years) >= 2:
-                response["status"] = False
-                response["message"] = "年份不一致！"
-                return jsonify(response)
-            semesters.add(teacher.get("semester"))
-            if len(semesters) >= 2:
-                response["status"] = False
-                response["message"] = "学期不一致！"
-                return jsonify(response)
-            if teacher["teacherNo"] in delete_teachers:
-                delete_teachers.remove(teacher["teacherNo"])
+            teacherNo[(year, semester)].add(teacher.get("teacherNo"))
+            if teacher["teacherNo"] in delete_teachers[(year, semester)]:
+                delete_teachers[(year, semester)].remove(teacher["teacherNo"])
             else:
-                add_teachers.add(teacher["teacherNo"])
-            sum += int(teacher.get("takeCreditHour"))
+                add_teachers[(year, semester)].add(teacher["teacherNo"])
+            if (year, semester) not in credits:
+                credits[(year, semester)] = 0
+            credits[(year, semester)] += int(teacher.get("takeCreditHour"))
 
-        if sum != int(post_course.get("creditHour")):
-            response["status"] = False
-            response["message"] = "学时核算不正确！申报学时为：{}，实际总和为 {}。".format(
-                post_course.get("creditHour"),
-                sum,
-            )
-            return jsonify(response)
+        for credit in credits.values():
+            if credit != int(post_course.get("creditHour")):
+                response["status"] = False
+                response["message"] = "学时核算不正确！申报学时为：{}，实际总和为 {}。".format(
+                    post_course.get("creditHour"),
+                    credit,
+                )
+                return jsonify(response)
 
         try:
             course.name = post_course.get("name")
@@ -171,28 +174,31 @@ def edit_course_teacher(courseNo):
             response["status"] = False
             response["message"] = "课程修改失败！数据类型不符或者约束不满足！"
 
-        for teacher in delete_teachers:
-            teacher = TeachCourse.query.filter_by(
-                courseNo=courseNo, teacherNo=teacher
-            ).first()
-            db.session.delete(teacher)
+        for (year, semester), No in delete_teachers.items():
+            for no in No:
+                teacher = TeachCourse.query.filter_by(
+                    courseNo=courseNo, teacherNo=no, year=year, semester=semester
+                ).first()
+                db.session.delete(teacher)
 
         for teacher in teachers:
             try:
-                if teacher["teacherNo"] in add_teachers:
+                year, semester = teacher.get("year"), teacher.get("semester")
+                if teacher["teacherNo"] in add_teachers[(year, semester)]:
                     add_teach_course(
                         teacherNo=teacher.get("teacherNo"),
                         courseNo=courseNo,
-                        year=teacher.get("year"),
-                        semester=teacher.get("semester"),
+                        year=year,
+                        semester=semester,
                         takeCreditHour=teacher.get("takeCreditHour"),
                     )
                 else:
                     update_teacher = TeachCourse.query.filter_by(
-                        courseNo=courseNo, teacherNo=teacher["teacherNo"]
+                        courseNo=courseNo,
+                        teacherNo=teacher["teacherNo"],
+                        year=year,
+                        semester=semester,
                     ).first()
-                    update_teacher.year = teacher.get("year")
-                    update_teacher.semester = teacher.get("semester")
                     update_teacher.takeCreditHour = teacher.get("takeCreditHour")
             except Exception as e:
                 print(e)
